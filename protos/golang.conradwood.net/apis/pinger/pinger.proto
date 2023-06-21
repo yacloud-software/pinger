@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package pinger;
+option java_package = "net.conradwood.apis.pinger";
+import "golang.conradwood.net/apis/common/common.proto";
+
+// result of a single ping
+message PingResult {
+  string IP=1;
+  uint32 Milliseconds=2;
+  bool Success=3; // false if timeout
+}
+
+// ping something once
+message PingRequest {
+  string IP=1;
+}
+message PingListRequest {
+  string PingerID=1;
+}
+message PingList {
+  repeated PingEntry Entries=1;
+}
+message PingEntry {
+  uint64 ID=1;
+  string IP=2;
+  uint32 Interval=3;
+  string MetricHostName=4;
+  string PingerID=5;
+  string Label=6;
+  uint32 IPVersion=7; // either 4 or 6
+}
+message PingTargetStatus {
+  string IP=1;
+  string Name=2;
+  bool Reachable=3;
+  uint32 Since=4;
+}
+message PingTargetStatusList {
+  repeated PingTargetStatus Status=1;
+}
+/* this service "pings"  IP Addresses. it needs special permissions to run
+e.g. setcap cap_net_raw=+ep //home/cnw/go/bin/pinger-server 
+*/
+service Pinger {
+  // execute a single ping
+  rpc Ping(PingRequest) returns (PingResult);
+  // get list of current ping targets and their status
+  rpc PingStatus(common.Void) returns (PingTargetStatusList);
+}
+// this service manages lists of IP Addresses to ping for each pinger
+service PingerList {
+  // get ping config (list of ip addresses to ping regularly). 
+  rpc GetPingList(PingListRequest) returns (PingList);
+}
+
+
