@@ -7,7 +7,7 @@ import (
 	pb "golang.conradwood.net/apis/pinger"
 	"golang.conradwood.net/go-easyops/errors"
 	"golang.conradwood.net/go-easyops/server"
-	"golang.conradwood.net/go-easyops/sql"
+	//	"golang.conradwood.net/go-easyops/sql"
 	"golang.conradwood.net/go-easyops/utils"
 	"golang.conradwood.net/pinger/db"
 	"golang.singingcat.net/scgolib/goodness"
@@ -21,8 +21,8 @@ var (
 	pinglist *pb.PingList
 	gn       goodness.Goodness
 	pedb     *db.DBPingEntry
-	psql     *sql.DB
-	debug    = flag.Bool("debug", false, "debug mode")
+	//	psql     *sql.DB
+	debug = flag.Bool("debug", false, "debug mode")
 )
 
 type echoServer struct {
@@ -32,9 +32,9 @@ func main() {
 	flag.Parse()
 	fmt.Printf("Starting PingerServer...\n")
 	var err error
-	psql, err = sql.Open()
+	//	psql, err = sql.Open()
 	utils.Bail("failed to open psql", err)
-	pedb = db.NewDBPingEntry(psql)
+	pedb = db.DefaultDBPingEntry()
 	gn = goodness.NewGoodness("ping")
 	go ping_loop()
 	sd := server.NewServerDef()
