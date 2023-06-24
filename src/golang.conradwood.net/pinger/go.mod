@@ -6,7 +6,7 @@ require (
 	github.com/go-ping/ping v1.1.0
 	golang.conradwood.net/apis/common v1.1.2309
 	golang.conradwood.net/apis/pinger v1.1.1697
-	golang.conradwood.net/go-easyops v0.1.17825
+	golang.conradwood.net/go-easyops v0.1.17944
 	golang.singingcat.net/apis/scweb v1.1.2258
 	golang.singingcat.net/apis/singingcat v1.1.2258
 	golang.singingcat.net/scgolib v0.1.17015
