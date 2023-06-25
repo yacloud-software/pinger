@@ -36,7 +36,6 @@ func main() {
 	utils.Bail("failed to open psql", err)
 	pedb = db.DefaultDBPingEntry()
 	gn = goodness.NewGoodness("ping")
-	go ping_loop()
 	sd := server.NewServerDef()
 	sd.Port = *port
 	sd.Register = server.Register(
