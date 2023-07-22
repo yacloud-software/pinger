@@ -89,7 +89,7 @@ func pingstuff() {
 }
 func reportStateUpstream(ps *PingState, result bool) {
 	pe := ps.pe
-	fmt.Printf("Reporting upstream: %#d (%v)\n", pe.ID, result)
+	fmt.Printf("Reporting upstream: %d (%v)\n", pe.ID, result)
 	ctx := authremote.Context()
 	r := &pb.SetPingStatusRequest{
 		ID:      pe.ID,
