@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"golang.conradwood.net/apis/common"
 	pb "golang.conradwood.net/apis/pinger"
 	"golang.conradwood.net/go-easyops/errors"
 	"golang.conradwood.net/go-easyops/server"
@@ -78,4 +79,22 @@ func (e *echoServer) GetPingList(ctx context.Context, req *pb.PingListRequest) (
 		}
 	}
 	return res, nil
+}
+func (e *echoServer) SetPingStatus(ctx context.Context, req *pb.SetPingStatusRequest) (*common.Void, error) {
+	if *debug {
+		fmt.Printf("Ping status #%d: %v\n", req.ID, req.Success)
+	}
+	get_status_tracker(req.ID).Set(req.Success)
+	return &common.Void{}, nil
+}
+func (e *echoServer) GetPingStatus(ctx context.Context, req *common.Void) (*pb.PingStatusList, error) {
+	res := &pb.PingStatusList{
+		Status: get_status_as_proto(ctx),
+	}
+	return res, nil
+}
+
+func get_ping_entry_by_id(ctx context.Context, ID uint64) (*pb.PingEntry, error) {
+	r, err := pedb.ByID(ctx, ID)
+	return r, err
 }

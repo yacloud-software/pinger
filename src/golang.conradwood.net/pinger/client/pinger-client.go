@@ -15,10 +15,15 @@ var (
 	echoClient pb.PingerClient
 	pinger     = flag.String("pinger", "", "if set query that particular pinger")
 	iplist     = flag.Bool("iplist", false, "if true get list of ips")
+	status     = flag.Bool("status", false, "print status")
 )
 
 func main() {
 	flag.Parse()
+	if *status {
+		utils.Bail("failed to print status", AllStatus())
+		os.Exit(0)
+	}
 	if *iplist {
 		utils.Bail("failed to get ipList()", ipList())
 		os.Exit(0)
@@ -90,4 +95,18 @@ func Status() error {
 	}
 	fmt.Println(t.ToPrettyString())
 	return nil
+}
+
+func AllStatus() error {
+	ctx := authremote.Context()
+	res, err := pb.GetPingerListClient().GetPingStatus(ctx, &common.Void{})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Got %d status information\n", len(res.Status))
+	for _, pe := range res.Status {
+		fmt.Printf("Status: %#v\n", pe)
+	}
+	return nil
+
 }

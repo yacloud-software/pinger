@@ -71,11 +71,13 @@ func pingstuff() {
 		prefix := fmt.Sprintf("[pinglist %s] ", ps.pe.IP)
 		pr, err := singlePing(prefix, ps.pe.IP)
 		if err != nil {
+			reportStateUpstream(ps, false)
 			ps.Failed()
 			fmt.Printf("%sFailed to ping %s: %s\n", prefix, ps.pe.IP, err)
 			continue
 		}
 		if pr != nil {
+			reportStateUpstream(ps, pr.Success)
 			if pr.Success {
 				ps.Success()
 			} else {
@@ -84,6 +86,20 @@ func pingstuff() {
 		}
 		fmt.Printf("%sPinged %s - %v\n", prefix, pr.IP, pr.Success)
 	}
+}
+func reportStateUpstream(ps *PingState, result bool) {
+	pe := ps.pe
+	fmt.Printf("Reporting upstream: %#d (%v)\n", pe.ID, result)
+	ctx := authremote.Context()
+	r := &pb.SetPingStatusRequest{
+		ID:      pe.ID,
+		Success: result,
+	}
+	_, err := pb.GetPingerListClient().SetPingStatus(ctx, r)
+	if err != nil {
+		fmt.Printf("Failed to inform pingerlist of new status: %s\n", err)
+	}
+
 }
 
 /************************************
