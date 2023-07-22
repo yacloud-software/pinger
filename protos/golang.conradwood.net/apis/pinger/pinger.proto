@@ -53,6 +53,54 @@ message PingStatus {
 message PingStatusList {
   repeated PingStatus Status=1;
 }
+
+message Tag {
+  uint64 ID=1;
+  string TagName=2;
+}
+
+// an IP address, attached to a host
+message IP {
+  uint64 ID=1;
+  uint32 IPVersion=2;
+  string Name=3;
+  string IP=4;
+  Host Host=5 [(common.sql_type)="uint64",(common.sql_reference)="host.id"];
+}
+
+// a host is just a name, but it might have multiple IPs
+message Host {
+  uint64 ID=1;
+  string Name=2;
+  string PingerID=3; // optional, must be set if there is a "pinger" running on that host
+}
+
+// a uni-directional route from one ip to another
+message Route {
+  uint64 ID=1;
+  IP SourceIP=2  [(common.sql_type)="uint64",(common.sql_reference)="ip.id"];
+  IP DestIP=3  [(common.sql_type)="uint64",(common.sql_reference)="ip.id"];
+}
+
+// tags are attached to routes
+message AddTagRequest {
+  uint64 RouteID=1;
+  Tag Tag=2;
+}
+message RemoveTagRequest {
+  uint64 RouteID=1;
+  uint64 TagID=2;
+}
+message TagList {
+  repeated Tag Tags=1;
+}
+message AddIPRequest {
+  uint64 HostID=1;
+  string IP=2; // either ip4, ip6 or "" (if "", it will be resolved via DNS)
+  uint32 IPVersion=3; // if IP is set, may be 0, otherwise must match type of IP
+  string Name=4; 
+}
+
 /* this service "pings"  IP Addresses. it needs special permissions to run
 e.g. setcap cap_net_raw=+ep //home/cnw/go/bin/pinger-server 
 */
@@ -70,6 +118,16 @@ service PingerList {
   rpc SetPingStatus(SetPingStatusRequest) returns (common.Void);
   // get a list of all known status'
   rpc GetPingStatus(common.Void)returns(PingStatusList);
+  // create a host
+  rpc CreateHost(Host)returns(Host);
+  // add an ip to host
+  rpc AddIP(AddIPRequest) returns (IP);
+  // create a route that is to be checked (from one ip to another)
+  rpc CreateRoute(Route) returns (Route);
+  // add tag to host
+  rpc AddTag(AddTagRequest) returns (TagList);
+  // remove tag from host
+  rpc RemoveTag(RemoveTagRequest) returns (TagList);
 }
 
 
