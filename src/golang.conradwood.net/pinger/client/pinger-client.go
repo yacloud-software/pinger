@@ -13,6 +13,11 @@ import (
 
 var (
 	echoClient pb.PingerClient
+	hostid     = flag.Int("hostid", 0, "ID of host to operate on")
+	ip         = flag.String("ip", "", "ip address")
+	ipversion  = flag.Int("ip_version", 4, "version of ipaddress")
+	name       = flag.String("name", "", "name of ip address or host")
+	addhost    = flag.String("add_host", "", "set to hostname")
 	pinger     = flag.String("pinger", "", "if set query that particular pinger")
 	iplist     = flag.Bool("iplist", false, "if true get list of ips")
 	status     = flag.Bool("status", false, "print status")
@@ -20,6 +25,14 @@ var (
 
 func main() {
 	flag.Parse()
+	if *ip != "" || *name != "" {
+		utils.Bail("failed to add ip", AddIP())
+		os.Exit(0)
+	}
+	if *addhost != "" {
+		utils.Bail("failed to add host", AddHost())
+		os.Exit(0)
+	}
 	if *status {
 		utils.Bail("failed to print status", AllStatus())
 		os.Exit(0)
@@ -119,5 +132,30 @@ func AllStatus() error {
 		t.NewRow()
 	}
 	fmt.Println(t.ToPrettyString())
+	return nil
+}
+func AddHost() error {
+	ctx := authremote.Context()
+	host := &pb.Host{Name: *addhost}
+	res, err := pb.GetPingerListClient().CreateHost(ctx, host)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("ID: %d\n", res.ID)
+	return nil
+}
+func AddIP() error {
+	ctx := authremote.Context()
+	ip := &pb.AddIPRequest{
+		HostID:    uint64(*hostid),
+		IP:        *ip,
+		IPVersion: uint32(*ipversion),
+		Name:      *name,
+	}
+	res, err := pb.GetPingerListClient().AddIP(ctx, ip)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("ID: %d\n", res.ID)
 	return nil
 }
