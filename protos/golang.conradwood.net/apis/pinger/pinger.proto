@@ -39,6 +39,20 @@ message PingTargetStatus {
 message PingTargetStatusList {
   repeated PingTargetStatus Status=1;
 }
+message SetPingStatusRequest {
+  uint64 ID=1;
+  bool Success=2;
+}
+message PingStatus {
+  PingEntry PingEntry=1;
+  bool Currently=3;
+  uint32 Since=4;
+  uint32 LastOnline=5;
+  uint32 LastOffline=6;
+}
+message PingStatusList {
+  repeated PingStatus Status=1;
+}
 /* this service "pings"  IP Addresses. it needs special permissions to run
 e.g. setcap cap_net_raw=+ep //home/cnw/go/bin/pinger-server 
 */
@@ -52,6 +66,10 @@ service Pinger {
 service PingerList {
   // get ping config (list of ip addresses to ping regularly). 
   rpc GetPingList(PingListRequest) returns (PingList);
+  // pinger reports a status through this RPC
+  rpc SetPingStatus(SetPingStatusRequest) returns (common.Void);
+  // get a list of all known status'
+  rpc GetPingStatus(common.Void)returns(PingStatusList);
 }
 
 
