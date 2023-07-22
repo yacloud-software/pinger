@@ -104,9 +104,20 @@ func AllStatus() error {
 		return err
 	}
 	fmt.Printf("Got %d status information\n", len(res.Status))
+	t := utils.Table{}
+	t.AddHeaders("ID", "Source", "Target", "Status", "Since", "IPv", "IP")
 	for _, pe := range res.Status {
-		fmt.Printf("Status: %#v\n", pe)
+		ps := pe.PingEntry
+		//		fmt.Printf("Status: %#v %#v\n", ps, pe)
+		t.AddUint64(ps.ID)
+		t.AddString(ps.PingerID)
+		t.AddString(ps.MetricHostName)
+		t.AddBool(pe.Currently)
+		t.AddTimestamp(pe.Since)
+		t.AddUint32(ps.IPVersion)
+		t.AddString(ps.IP)
+		t.NewRow()
 	}
+	fmt.Println(t.ToPrettyString())
 	return nil
-
 }

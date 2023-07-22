@@ -139,6 +139,7 @@ func pinger_list_update() {
 	res := &pb.PingList{}
 	for _, e := range pl.Entries {
 		if e.IP == "" {
+			fmt.Printf("Ignoring Entry #%d (%s) - got no ip\n", e.ID, e.MetricHostName)
 			continue
 		}
 		res.Entries = append(res.Entries, e)

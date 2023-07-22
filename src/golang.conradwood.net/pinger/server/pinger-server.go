@@ -8,6 +8,7 @@ import (
 	pb "golang.conradwood.net/apis/pinger"
 	"golang.conradwood.net/go-easyops/errors"
 	"golang.conradwood.net/go-easyops/server"
+	"sort"
 	//	"golang.conradwood.net/go-easyops/sql"
 	"golang.conradwood.net/go-easyops/utils"
 	"golang.conradwood.net/pinger/db"
@@ -78,12 +79,12 @@ func (e *echoServer) GetPingList(ctx context.Context, req *pb.PingListRequest) (
 			}
 		}
 	}
+	if *debug {
+		fmt.Printf("Returned %d entries to pinger %s\n", len(res.Entries), req.PingerID)
+	}
 	return res, nil
 }
 func (e *echoServer) SetPingStatus(ctx context.Context, req *pb.SetPingStatusRequest) (*common.Void, error) {
-	if *debug {
-		fmt.Printf("Ping status #%d: %v\n", req.ID, req.Success)
-	}
 	get_status_tracker(req.ID).Set(req.Success)
 	return &common.Void{}, nil
 }
@@ -91,6 +92,14 @@ func (e *echoServer) GetPingStatus(ctx context.Context, req *common.Void) (*pb.P
 	res := &pb.PingStatusList{
 		Status: get_status_as_proto(ctx),
 	}
+	sort.Slice(res.Status, func(i, j int) bool {
+		s1 := res.Status[i].PingEntry
+		s2 := res.Status[j].PingEntry
+		if s1.PingerID != s2.PingerID {
+			return s1.PingerID < s2.PingerID
+		}
+		return s1.MetricHostName < s2.MetricHostName
+	})
 	return res, nil
 }
 

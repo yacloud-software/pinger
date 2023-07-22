@@ -26,12 +26,16 @@ func get_status_tracker(ID uint64) *status {
 	if found {
 		return res
 	}
-	res = &status{ID: ID}
+	res = &status{ID: ID, since: time.Now()}
 	status_trackers[ID] = res
 	return res
 }
 func (s *status) Set(b bool) {
 	if s.state != b {
+		if *debug {
+			fmt.Printf("Changed status of pingentry #%d to %v\n", s.ID, b)
+
+		}
 		s.since = time.Now()
 	}
 	s.state = b
@@ -57,6 +61,12 @@ func get_status_as_proto(ctx context.Context) []*pb.PingStatus {
 			PingEntry: pe,
 			Currently: st.state,
 			Since:     uint32(st.since.Unix()),
+		}
+		if pe.IP == "" {
+			pe.IP, err = dc.Get(pe.MetricHostName, pe.IPVersion)
+			if err != nil {
+				fmt.Printf("Failed to resolve: %s\n", err)
+			}
 		}
 		res = append(res, ps)
 	}

@@ -34,8 +34,8 @@ func (d *DNSCache) Get(name string, version uint32) (string, error) {
 		return ips[i] < ips[j]
 	})
 	for _, ip := range ips {
-		fmt.Printf("IP: %#v\n", ip)
 		if IPVersion(ip) == version {
+			fmt.Printf("Resolved %s (%d) to IP: %#v\n", name, version, ip)
 			dce := &dnsCacheEntry{
 				name:    name,
 				ipv:     version,
@@ -46,6 +46,7 @@ func (d *DNSCache) Get(name string, version uint32) (string, error) {
 			return ip, nil
 		}
 	}
+	fmt.Printf("Failed to resolve %s (%d) to any ip\n", name, version)
 	return "", nil
 }
 
