@@ -17,6 +17,7 @@ import (
 )
 
 var (
+	debug    = flag.Bool("debug", false, "debug mode")
 	port     = flag.Int("port", 4107, "The grpc server port")
 	pingerid = flag.String("pingerid", "", "pingerid")
 	pinglist *pb.PingList
@@ -84,7 +85,7 @@ func pingstuff() {
 				ps.Failed()
 			}
 		}
-		fmt.Printf("%sPinged %s - %v\n", prefix, pr.IP, pr.Success)
+		debugf("%sPinged %s - %v\n", prefix, pr.IP, pr.Success)
 	}
 }
 func reportStateUpstream(ps *PingState, result bool) {
@@ -157,7 +158,7 @@ func (e *echoServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingRes
 	return singlePing(prefix, req.IP)
 }
 func singlePing(prefix string, ip string) (*pb.PingResult, error) {
-	fmt.Printf("%sPinging %s\n", prefix, ip)
+	debugf("%sPinging %s\n", prefix, ip)
 	pinger, err := ping.NewPinger(ip)
 	if err != nil {
 		return nil, err
@@ -187,4 +188,11 @@ func (e *echoServer) PingStatus(ctx context.Context, req *common.Void) (*pb.Ping
 		res.Status = append(res.Status, ps.PingTargetStatus())
 	}
 	return res, nil
+}
+
+func debugf(format string, args ...interface{}) {
+	if *debug {
+		return
+	}
+	fmt.Printf(format, args...)
 }
