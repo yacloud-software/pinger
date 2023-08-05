@@ -191,7 +191,7 @@ func (e *echoServer) PingStatus(ctx context.Context, req *common.Void) (*pb.Ping
 }
 
 func debugf(format string, args ...interface{}) {
-	if *debug {
+	if !*debug {
 		return
 	}
 	fmt.Printf(format, args...)
