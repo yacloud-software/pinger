@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package pinger;
+option go_package = "golang.conradwood.net/apis/pinger";
 option java_package = "net.conradwood.apis.pinger";
 import "golang.conradwood.net/apis/common/common.proto";
 
@@ -129,5 +130,3 @@ service PingerList {
   // remove tag from host
   rpc RemoveTag(RemoveTagRequest) returns (TagList);
 }
-
-
