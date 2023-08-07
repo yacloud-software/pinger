@@ -71,10 +71,14 @@ func (e *echoServer) GetPingList(ctx context.Context, req *pb.PingListRequest) (
 	if err != nil {
 		return nil, err
 	}
-	res := &pb.PingList{
-		Entries: ape,
-	}
-	for _, e := range res.Entries {
+	res := &pb.PingList{}
+
+	var entries []*pb.PingEntry
+	for _, e := range ape {
+		if e.IsActive == false {
+			continue
+		}
+		entries = append(entries, e)
 		if e.IP == "" {
 			e.IP, err = dc.Get(e.MetricHostName, e.IPVersion)
 			if err != nil {
@@ -83,6 +87,7 @@ func (e *echoServer) GetPingList(ctx context.Context, req *pb.PingListRequest) (
 			}
 		}
 	}
+	res.Entries = entries
 	if *debug {
 		fmt.Printf("Returned %d entries to pinger %s\n", len(res.Entries), req.PingerID)
 	}

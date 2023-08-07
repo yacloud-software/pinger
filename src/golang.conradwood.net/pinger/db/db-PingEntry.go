@@ -16,7 +16,7 @@ package db
 
 Main Table:
 
- CREATE TABLE pingentry (id integer primary key default nextval('pingentry_seq'),ip text not null  ,interval integer not null  ,metrichostname text not null  ,pingerid text not null  ,label text not null  ,ipversion integer not null  );
+ CREATE TABLE pingentry (id integer primary key default nextval('pingentry_seq'),ip text not null  ,interval integer not null  ,metrichostname text not null  ,pingerid text not null  ,label text not null  ,ipversion integer not null  ,isactive boolean not null  );
 
 Alter statements:
 ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS ip text not null default '';
@@ -25,11 +25,12 @@ ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS metrichostname text not null defa
 ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS pingerid text not null default '';
 ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS label text not null default '';
 ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS ipversion integer not null default 0;
+ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS isactive boolean not null default false;
 
 
 Archive Table: (structs can be moved from main to archive using Archive() function)
 
- CREATE TABLE pingentry_archive (id integer unique not null,ip text not null,interval integer not null,metrichostname text not null,pingerid text not null,label text not null,ipversion integer not null);
+ CREATE TABLE pingentry_archive (id integer unique not null,ip text not null,interval integer not null,metrichostname text not null,pingerid text not null,label text not null,ipversion integer not null,isactive boolean not null);
 */
 
 import (
@@ -87,7 +88,7 @@ func (a *DBPingEntry) Archive(ctx context.Context, id uint64) error {
 	}
 
 	// now save it to archive:
-	_, e := a.DB.ExecContext(ctx, "archive_DBPingEntry", "insert into "+a.SQLArchivetablename+" (id,ip, interval, metrichostname, pingerid, label, ipversion) values ($1,$2, $3, $4, $5, $6, $7) ", p.ID, p.IP, p.Interval, p.MetricHostName, p.PingerID, p.Label, p.IPVersion)
+	_, e := a.DB.ExecContext(ctx, "archive_DBPingEntry", "insert into "+a.SQLArchivetablename+" (id,ip, interval, metrichostname, pingerid, label, ipversion, isactive) values ($1,$2, $3, $4, $5, $6, $7, $8) ", p.ID, p.IP, p.Interval, p.MetricHostName, p.PingerID, p.Label, p.IPVersion, p.IsActive)
 	if e != nil {
 		return e
 	}
@@ -100,7 +101,7 @@ func (a *DBPingEntry) Archive(ctx context.Context, id uint64) error {
 // Save (and use database default ID generation)
 func (a *DBPingEntry) Save(ctx context.Context, p *savepb.PingEntry) (uint64, error) {
 	qn := "DBPingEntry_Save"
-	rows, e := a.DB.QueryContext(ctx, qn, "insert into "+a.SQLTablename+" (ip, interval, metrichostname, pingerid, label, ipversion) values ($1, $2, $3, $4, $5, $6) returning id", p.IP, p.Interval, p.MetricHostName, p.PingerID, p.Label, p.IPVersion)
+	rows, e := a.DB.QueryContext(ctx, qn, "insert into "+a.SQLTablename+" (ip, interval, metrichostname, pingerid, label, ipversion, isactive) values ($1, $2, $3, $4, $5, $6, $7) returning id", p.IP, p.Interval, p.MetricHostName, p.PingerID, p.Label, p.IPVersion, p.IsActive)
 	if e != nil {
 		return 0, a.Error(ctx, qn, e)
 	}
@@ -120,13 +121,13 @@ func (a *DBPingEntry) Save(ctx context.Context, p *savepb.PingEntry) (uint64, er
 // Save using the ID specified
 func (a *DBPingEntry) SaveWithID(ctx context.Context, p *savepb.PingEntry) error {
 	qn := "insert_DBPingEntry"
-	_, e := a.DB.ExecContext(ctx, qn, "insert into "+a.SQLTablename+" (id,ip, interval, metrichostname, pingerid, label, ipversion) values ($1,$2, $3, $4, $5, $6, $7) ", p.ID, p.IP, p.Interval, p.MetricHostName, p.PingerID, p.Label, p.IPVersion)
+	_, e := a.DB.ExecContext(ctx, qn, "insert into "+a.SQLTablename+" (id,ip, interval, metrichostname, pingerid, label, ipversion, isactive) values ($1,$2, $3, $4, $5, $6, $7, $8) ", p.ID, p.IP, p.Interval, p.MetricHostName, p.PingerID, p.Label, p.IPVersion, p.IsActive)
 	return a.Error(ctx, qn, e)
 }
 
 func (a *DBPingEntry) Update(ctx context.Context, p *savepb.PingEntry) error {
 	qn := "DBPingEntry_Update"
-	_, e := a.DB.ExecContext(ctx, qn, "update "+a.SQLTablename+" set ip=$1, interval=$2, metrichostname=$3, pingerid=$4, label=$5, ipversion=$6 where id = $7", p.IP, p.Interval, p.MetricHostName, p.PingerID, p.Label, p.IPVersion, p.ID)
+	_, e := a.DB.ExecContext(ctx, qn, "update "+a.SQLTablename+" set ip=$1, interval=$2, metrichostname=$3, pingerid=$4, label=$5, ipversion=$6, isactive=$7 where id = $8", p.IP, p.Interval, p.MetricHostName, p.PingerID, p.Label, p.IPVersion, p.IsActive, p.ID)
 
 	return a.Error(ctx, qn, e)
 }
@@ -141,7 +142,7 @@ func (a *DBPingEntry) DeleteByID(ctx context.Context, p uint64) error {
 // get it by primary id
 func (a *DBPingEntry) ByID(ctx context.Context, p uint64) (*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByID"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where id = $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where id = $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByID: error querying (%s)", e))
 	}
@@ -162,7 +163,7 @@ func (a *DBPingEntry) ByID(ctx context.Context, p uint64) (*savepb.PingEntry, er
 // get it by primary id (nil if no such ID row, but no error either)
 func (a *DBPingEntry) TryByID(ctx context.Context, p uint64) (*savepb.PingEntry, error) {
 	qn := "DBPingEntry_TryByID"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where id = $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where id = $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("TryByID: error querying (%s)", e))
 	}
@@ -183,7 +184,7 @@ func (a *DBPingEntry) TryByID(ctx context.Context, p uint64) (*savepb.PingEntry,
 // get all rows
 func (a *DBPingEntry) All(ctx context.Context) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_all"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" order by id")
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" order by id")
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("All: error querying (%s)", e))
 	}
@@ -202,7 +203,7 @@ func (a *DBPingEntry) All(ctx context.Context) ([]*savepb.PingEntry, error) {
 // get all "DBPingEntry" rows with matching IP
 func (a *DBPingEntry) ByIP(ctx context.Context, p string) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByIP"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where ip = $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where ip = $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByIP: error querying (%s)", e))
 	}
@@ -217,7 +218,7 @@ func (a *DBPingEntry) ByIP(ctx context.Context, p string) ([]*savepb.PingEntry, 
 // the 'like' lookup
 func (a *DBPingEntry) ByLikeIP(ctx context.Context, p string) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByLikeIP"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where ip ilike $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where ip ilike $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByIP: error querying (%s)", e))
 	}
@@ -232,7 +233,7 @@ func (a *DBPingEntry) ByLikeIP(ctx context.Context, p string) ([]*savepb.PingEnt
 // get all "DBPingEntry" rows with matching Interval
 func (a *DBPingEntry) ByInterval(ctx context.Context, p uint32) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByInterval"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where interval = $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where interval = $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByInterval: error querying (%s)", e))
 	}
@@ -247,7 +248,7 @@ func (a *DBPingEntry) ByInterval(ctx context.Context, p uint32) ([]*savepb.PingE
 // the 'like' lookup
 func (a *DBPingEntry) ByLikeInterval(ctx context.Context, p uint32) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByLikeInterval"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where interval ilike $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where interval ilike $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByInterval: error querying (%s)", e))
 	}
@@ -262,7 +263,7 @@ func (a *DBPingEntry) ByLikeInterval(ctx context.Context, p uint32) ([]*savepb.P
 // get all "DBPingEntry" rows with matching MetricHostName
 func (a *DBPingEntry) ByMetricHostName(ctx context.Context, p string) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByMetricHostName"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where metrichostname = $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where metrichostname = $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByMetricHostName: error querying (%s)", e))
 	}
@@ -277,7 +278,7 @@ func (a *DBPingEntry) ByMetricHostName(ctx context.Context, p string) ([]*savepb
 // the 'like' lookup
 func (a *DBPingEntry) ByLikeMetricHostName(ctx context.Context, p string) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByLikeMetricHostName"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where metrichostname ilike $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where metrichostname ilike $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByMetricHostName: error querying (%s)", e))
 	}
@@ -292,7 +293,7 @@ func (a *DBPingEntry) ByLikeMetricHostName(ctx context.Context, p string) ([]*sa
 // get all "DBPingEntry" rows with matching PingerID
 func (a *DBPingEntry) ByPingerID(ctx context.Context, p string) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByPingerID"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where pingerid = $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where pingerid = $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByPingerID: error querying (%s)", e))
 	}
@@ -307,7 +308,7 @@ func (a *DBPingEntry) ByPingerID(ctx context.Context, p string) ([]*savepb.PingE
 // the 'like' lookup
 func (a *DBPingEntry) ByLikePingerID(ctx context.Context, p string) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByLikePingerID"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where pingerid ilike $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where pingerid ilike $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByPingerID: error querying (%s)", e))
 	}
@@ -322,7 +323,7 @@ func (a *DBPingEntry) ByLikePingerID(ctx context.Context, p string) ([]*savepb.P
 // get all "DBPingEntry" rows with matching Label
 func (a *DBPingEntry) ByLabel(ctx context.Context, p string) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByLabel"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where label = $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where label = $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByLabel: error querying (%s)", e))
 	}
@@ -337,7 +338,7 @@ func (a *DBPingEntry) ByLabel(ctx context.Context, p string) ([]*savepb.PingEntr
 // the 'like' lookup
 func (a *DBPingEntry) ByLikeLabel(ctx context.Context, p string) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByLikeLabel"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where label ilike $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where label ilike $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByLabel: error querying (%s)", e))
 	}
@@ -352,7 +353,7 @@ func (a *DBPingEntry) ByLikeLabel(ctx context.Context, p string) ([]*savepb.Ping
 // get all "DBPingEntry" rows with matching IPVersion
 func (a *DBPingEntry) ByIPVersion(ctx context.Context, p uint32) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByIPVersion"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where ipversion = $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where ipversion = $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByIPVersion: error querying (%s)", e))
 	}
@@ -367,7 +368,7 @@ func (a *DBPingEntry) ByIPVersion(ctx context.Context, p uint32) ([]*savepb.Ping
 // the 'like' lookup
 func (a *DBPingEntry) ByLikeIPVersion(ctx context.Context, p uint32) ([]*savepb.PingEntry, error) {
 	qn := "DBPingEntry_ByLikeIPVersion"
-	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion from "+a.SQLTablename+" where ipversion ilike $1", p)
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where ipversion ilike $1", p)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByIPVersion: error querying (%s)", e))
 	}
@@ -375,6 +376,36 @@ func (a *DBPingEntry) ByLikeIPVersion(ctx context.Context, p uint32) ([]*savepb.
 	l, e := a.FromRows(ctx, rows)
 	if e != nil {
 		return nil, a.Error(ctx, qn, fmt.Errorf("ByIPVersion: error scanning (%s)", e))
+	}
+	return l, nil
+}
+
+// get all "DBPingEntry" rows with matching IsActive
+func (a *DBPingEntry) ByIsActive(ctx context.Context, p bool) ([]*savepb.PingEntry, error) {
+	qn := "DBPingEntry_ByIsActive"
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where isactive = $1", p)
+	if e != nil {
+		return nil, a.Error(ctx, qn, fmt.Errorf("ByIsActive: error querying (%s)", e))
+	}
+	defer rows.Close()
+	l, e := a.FromRows(ctx, rows)
+	if e != nil {
+		return nil, a.Error(ctx, qn, fmt.Errorf("ByIsActive: error scanning (%s)", e))
+	}
+	return l, nil
+}
+
+// the 'like' lookup
+func (a *DBPingEntry) ByLikeIsActive(ctx context.Context, p bool) ([]*savepb.PingEntry, error) {
+	qn := "DBPingEntry_ByLikeIsActive"
+	rows, e := a.DB.QueryContext(ctx, qn, "select id,ip, interval, metrichostname, pingerid, label, ipversion, isactive from "+a.SQLTablename+" where isactive ilike $1", p)
+	if e != nil {
+		return nil, a.Error(ctx, qn, fmt.Errorf("ByIsActive: error querying (%s)", e))
+	}
+	defer rows.Close()
+	l, e := a.FromRows(ctx, rows)
+	if e != nil {
+		return nil, a.Error(ctx, qn, fmt.Errorf("ByIsActive: error scanning (%s)", e))
 	}
 	return l, nil
 }
@@ -400,17 +431,17 @@ func (a *DBPingEntry) Tablename() string {
 }
 
 func (a *DBPingEntry) SelectCols() string {
-	return "id,ip, interval, metrichostname, pingerid, label, ipversion"
+	return "id,ip, interval, metrichostname, pingerid, label, ipversion, isactive"
 }
 func (a *DBPingEntry) SelectColsQualified() string {
-	return "" + a.SQLTablename + ".id," + a.SQLTablename + ".ip, " + a.SQLTablename + ".interval, " + a.SQLTablename + ".metrichostname, " + a.SQLTablename + ".pingerid, " + a.SQLTablename + ".label, " + a.SQLTablename + ".ipversion"
+	return "" + a.SQLTablename + ".id," + a.SQLTablename + ".ip, " + a.SQLTablename + ".interval, " + a.SQLTablename + ".metrichostname, " + a.SQLTablename + ".pingerid, " + a.SQLTablename + ".label, " + a.SQLTablename + ".ipversion, " + a.SQLTablename + ".isactive"
 }
 
 func (a *DBPingEntry) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.PingEntry, error) {
 	var res []*savepb.PingEntry
 	for rows.Next() {
 		foo := savepb.PingEntry{}
-		err := rows.Scan(&foo.ID, &foo.IP, &foo.Interval, &foo.MetricHostName, &foo.PingerID, &foo.Label, &foo.IPVersion)
+		err := rows.Scan(&foo.ID, &foo.IP, &foo.Interval, &foo.MetricHostName, &foo.PingerID, &foo.Label, &foo.IPVersion, &foo.IsActive)
 		if err != nil {
 			return nil, a.Error(ctx, "fromrow-scan", err)
 		}
@@ -425,14 +456,15 @@ func (a *DBPingEntry) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb
 func (a *DBPingEntry) CreateTable(ctx context.Context) error {
 	csql := []string{
 		`create sequence if not exists ` + a.SQLTablename + `_seq;`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null  ,interval integer not null  ,metrichostname text not null  ,pingerid text not null  ,label text not null  ,ipversion integer not null  );`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null  ,interval integer not null  ,metrichostname text not null  ,pingerid text not null  ,label text not null  ,ipversion integer not null  );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null  ,interval integer not null  ,metrichostname text not null  ,pingerid text not null  ,label text not null  ,ipversion integer not null  ,isactive boolean not null  );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null  ,interval integer not null  ,metrichostname text not null  ,pingerid text not null  ,label text not null  ,ipversion integer not null  ,isactive boolean not null  );`,
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS ip text not null default '';`,
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS interval integer not null default 0;`,
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS metrichostname text not null default '';`,
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS pingerid text not null default '';`,
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS label text not null default '';`,
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS ipversion integer not null default 0;`,
+		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS isactive boolean not null default false;`,
 	}
 	for i, c := range csql {
 		_, e := a.DB.ExecContext(ctx, fmt.Sprintf("create_"+a.SQLTablename+"_%d", i), c)
