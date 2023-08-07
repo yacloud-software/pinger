@@ -30,6 +30,7 @@ message PingEntry {
   string PingerID=5;
   string Label=6;
   uint32 IPVersion=7; // either 4 or 6
+  bool IsActive=8; // entry ignored if falsey
 }
 message PingTargetStatus {
   string IP=1;
