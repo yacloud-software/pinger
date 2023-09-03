@@ -1,6 +1,6 @@
 // client create: PingerListClient
 /*
-  Created by /srv/home/cnw/devel/go/go-tools/src/golang.conradwood.net/gotools/protoc-gen-cnw/protoc-gen-cnw.go
+  Created by /home/cnw/devel/go/yatools/src/golang.yacloud.eu/yatools/protoc-gen-cnw/protoc-gen-cnw.go
 */
 
 /* geninfo:
@@ -13,7 +13,7 @@
    varname   : client_PingerListClient_1
    clientname: PingerListClient
    servername: PingerListServer
-   gscvname  : pinger.PingerList
+   gsvcname  : pinger.PingerList
    lockname  : lock_PingerListClient_1
    activename: active_PingerListClient_1
 */
@@ -46,3 +46,7 @@ func GetPingerListClient() PingerListClient {
 }
 
 func PingerListLookupID() string { return "pinger.PingerList" } // returns the ID suitable for lookup in the registry. treat as opaque, subject to change.
+
+func init() {
+   client.RegisterDependency("pinger.PingerList")
+}
