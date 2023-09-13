@@ -6,7 +6,7 @@ require (
 	github.com/go-ping/ping v1.1.0
 	golang.conradwood.net/apis/common v1.1.2503
 	golang.conradwood.net/apis/pinger v1.1.1697
-	golang.conradwood.net/go-easyops v0.1.19878
+	golang.conradwood.net/go-easyops v0.1.20106
 	golang.singingcat.net/scgolib v0.1.17015
 	google.golang.org/grpc v1.57.0
 )
@@ -33,7 +33,6 @@ require (
 	golang.conradwood.net/apis/goeasyops v1.1.2503 // indirect
 	golang.conradwood.net/apis/objectstore v1.1.2503 // indirect
 	golang.conradwood.net/apis/registry v1.1.2503 // indirect
-	golang.conradwood.net/apis/rpcinterceptor v1.1.2495 // indirect
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
