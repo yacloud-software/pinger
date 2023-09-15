@@ -49,4 +49,5 @@ func PingerLookupID() string { return "pinger.Pinger" } // returns the ID suitab
 
 func init() {
    client.RegisterDependency("pinger.Pinger")
+   AddService("pinger.Pinger")
 }

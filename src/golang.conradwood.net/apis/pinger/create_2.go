@@ -49,4 +49,5 @@ func PingerListLookupID() string { return "pinger.PingerList" } // returns the I
 
 func init() {
    client.RegisterDependency("pinger.PingerList")
+   AddService("pinger.PingerList")
 }
