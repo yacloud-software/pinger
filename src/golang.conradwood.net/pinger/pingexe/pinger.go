@@ -36,7 +36,7 @@ func main() {
 	go pingstuff_loop()
 	sd := server.NewServerDef()
 	sd.AddTag("pinger", *pingerid)
-	sd.Port = *port
+	sd.SetPort(*port)
 	sd.Register = server.Register(
 		func(server *grpc.Server) error {
 			e := new(echoServer)

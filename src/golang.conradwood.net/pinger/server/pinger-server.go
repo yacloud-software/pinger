@@ -43,7 +43,7 @@ func main() {
 	db.DefaultDBTag()
 	gn = goodness.NewGoodness("ping")
 	sd := server.NewServerDef()
-	sd.Port = *port
+	sd.SetPort(*port)
 	sd.Register = server.Register(
 		func(server *grpc.Server) error {
 			e := new(echoServer)
