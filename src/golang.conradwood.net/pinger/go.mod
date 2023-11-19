@@ -4,9 +4,9 @@ go 1.18
 
 require (
 	github.com/go-ping/ping v1.1.0
-	golang.conradwood.net/apis/common v1.1.2678
+	golang.conradwood.net/apis/common v1.1.2682
 	golang.conradwood.net/apis/pinger v1.1.1697
-	golang.conradwood.net/go-easyops v0.1.22300
+	golang.conradwood.net/go-easyops v0.1.22436
 	golang.singingcat.net/scgolib v0.1.18884
 	google.golang.org/grpc v1.59.0
 )
@@ -23,13 +23,13 @@ require (
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
-	golang.conradwood.net/apis/auth v1.1.2678 // indirect
+	golang.conradwood.net/apis/auth v1.1.2682 // indirect
 	golang.conradwood.net/apis/autodeployer v1.1.2643 // indirect
 	golang.conradwood.net/apis/deploymonkey v1.1.2643 // indirect
 	golang.conradwood.net/apis/echoservice v1.1.2643 // indirect
 	golang.conradwood.net/apis/errorlogger v1.1.2643 // indirect
 	golang.conradwood.net/apis/framework v1.1.2643 // indirect
-	golang.conradwood.net/apis/goeasyops v1.1.2678 // indirect
+	golang.conradwood.net/apis/goeasyops v1.1.2682 // indirect
 	golang.conradwood.net/apis/objectstore v1.1.2643 // indirect
 	golang.conradwood.net/apis/registry v1.1.2643 // indirect
 	golang.org/x/net v0.18.0 // indirect
@@ -40,7 +40,7 @@ require (
 	golang.singingcat.net/apis/scweb v1.1.2643 // indirect
 	golang.singingcat.net/apis/singingcat v1.1.2643 // indirect
 	golang.yacloud.eu/apis/fscache v1.1.2643 // indirect
-	golang.yacloud.eu/apis/session v1.1.2678 // indirect
+	golang.yacloud.eu/apis/session v1.1.2682 // indirect
 	golang.yacloud.eu/apis/urlcacher v1.1.2643 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
