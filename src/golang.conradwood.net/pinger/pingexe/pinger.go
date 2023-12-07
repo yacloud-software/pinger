@@ -37,13 +37,13 @@ func main() {
 	sd := server.NewServerDef()
 	sd.AddTag("pinger", *pingerid)
 	sd.SetPort(*port)
-	sd.Register = server.Register(
+	sd.SetRegister(server.Register(
 		func(server *grpc.Server) error {
 			e := new(echoServer)
 			pb.RegisterPingerServer(server, e)
 			return nil
 		},
-	)
+	))
 	err := server.ServerStartup(sd)
 	utils.Bail("Unable to start server", err)
 	os.Exit(0)
@@ -196,3 +196,4 @@ func debugf(format string, args ...interface{}) {
 	}
 	fmt.Printf(format, args...)
 }
+

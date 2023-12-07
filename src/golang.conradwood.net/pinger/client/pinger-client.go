@@ -159,3 +159,4 @@ func AddIP() error {
 	fmt.Printf("ID: %d\n", res.ID)
 	return nil
 }
+

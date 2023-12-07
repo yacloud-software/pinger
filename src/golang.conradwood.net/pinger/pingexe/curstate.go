@@ -111,3 +111,4 @@ func (ps *PingState) PingTargetStatus() *pb.PingTargetStatus {
 
 	return res
 }
+

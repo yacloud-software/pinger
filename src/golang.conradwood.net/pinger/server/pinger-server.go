@@ -44,13 +44,13 @@ func main() {
 	gn = goodness.NewGoodness("ping")
 	sd := server.NewServerDef()
 	sd.SetPort(*port)
-	sd.Register = server.Register(
+	sd.SetRegister(server.Register(
 		func(server *grpc.Server) error {
 			e := new(echoServer)
 			pb.RegisterPingerListServer(server, e)
 			return nil
 		},
-	)
+	))
 	err = server.ServerStartup(sd)
 	utils.Bail("Unable to start server", err)
 	os.Exit(0)
@@ -116,3 +116,4 @@ func get_ping_entry_by_id(ctx context.Context, ID uint64) (*pb.PingEntry, error)
 	r, err := pedb.ByID(ctx, ID)
 	return r, err
 }
+

@@ -51,3 +51,4 @@ func init() {
    client.RegisterDependency("pinger.Pinger")
    AddService("pinger.Pinger")
 }
+
