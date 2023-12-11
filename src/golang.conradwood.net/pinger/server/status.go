@@ -73,3 +73,4 @@ func get_status_as_proto(ctx context.Context) []*pb.PingStatus {
 	return res
 }
 
+
