@@ -282,7 +282,7 @@ func (a *DBRoute) SelectColsQualified() string {
 	return "" + a.SQLTablename + ".id," + a.SQLTablename + ".sourceip, " + a.SQLTablename + ".destip"
 }
 
-func (a *DBRoute) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Route, error) {
+func (a *DBRoute) FromRowsOld(ctx context.Context, rows *gosql.Rows) ([]*savepb.Route, error) {
 	var res []*savepb.Route
 	for rows.Next() {
 		foo := savepb.Route{SourceIP: &savepb.IP{}, DestIP: &savepb.IP{}}
@@ -294,6 +294,28 @@ func (a *DBRoute) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Rou
 	}
 	return res, nil
 }
+func (a *DBRoute) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Route, error) {
+	var res []*savepb.Route
+	for rows.Next() {
+		// SCANNER:
+		foo := &savepb.Route{}
+		// create the non-nullable pointers
+		foo.SourceIP = &savepb.IP{} // non-nullable
+		foo.DestIP = &savepb.IP{}   // non-nullable
+		// create variables for scan results
+		scanTarget_0 := &foo.ID
+		scanTarget_1 := &foo.SourceIP.ID
+		scanTarget_2 := &foo.DestIP.ID
+		err := rows.Scan(scanTarget_0, scanTarget_1, scanTarget_2)
+		// END SCANNER
+
+		if err != nil {
+			return nil, a.Error(ctx, "fromrow-scan", err)
+		}
+		res = append(res, foo)
+	}
+	return res, nil
+}
 
 /**********************************************************************
 * Helper to create table and columns
@@ -301,16 +323,32 @@ func (a *DBRoute) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Rou
 func (a *DBRoute) CreateTable(ctx context.Context) error {
 	csql := []string{
 		`create sequence if not exists ` + a.SQLTablename + `_seq;`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),sourceip bigint not null  references ip (id) on delete cascade  ,destip bigint not null  references ip (id) on delete cascade  );`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),sourceip bigint not null  references ip (id) on delete cascade  ,destip bigint not null  references ip (id) on delete cascade  );`,
-		`ALTER TABLE route ADD COLUMN IF NOT EXISTS sourceip bigint not null references ip (id) on delete cascade  default 0;`,
-		`ALTER TABLE route ADD COLUMN IF NOT EXISTS destip bigint not null references ip (id) on delete cascade  default 0;`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),sourceip bigint not null ,destip bigint not null );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),sourceip bigint not null ,destip bigint not null );`,
+		`ALTER TABLE route ADD COLUMN IF NOT EXISTS sourceip bigint not null default 0;`,
+		`ALTER TABLE route ADD COLUMN IF NOT EXISTS destip bigint not null default 0;`,
+
+		`ALTER TABLE route_archive ADD COLUMN IF NOT EXISTS sourceip bigint not null  default 0;`,
+		`ALTER TABLE route_archive ADD COLUMN IF NOT EXISTS destip bigint not null  default 0;`,
 	}
+
 	for i, c := range csql {
 		_, e := a.DB.ExecContext(ctx, fmt.Sprintf("create_"+a.SQLTablename+"_%d", i), c)
 		if e != nil {
 			return e
 		}
+	}
+
+	// these are optional, expected to fail
+	csql = []string{
+		// Indices:
+
+		// Foreign keys:
+		`ALTER TABLE route add constraint mkdb_fk_route_sourceip_ipid FOREIGN KEY (sourceip) references ip (id) on delete cascade ;`,
+		`ALTER TABLE route add constraint mkdb_fk_route_destip_ipid FOREIGN KEY (destip) references ip (id) on delete cascade ;`,
+	}
+	for i, c := range csql {
+		a.DB.ExecContextQuiet(ctx, fmt.Sprintf("create_"+a.SQLTablename+"_%d", i), c)
 	}
 	return nil
 }
@@ -324,9 +362,4 @@ func (a *DBRoute) Error(ctx context.Context, q string, e error) error {
 	}
 	return fmt.Errorf("[table="+a.SQLTablename+", query=%s] Error: %s", q, e)
 }
-
-
-
-
-
 

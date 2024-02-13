@@ -344,7 +344,7 @@ func (a *DBIP) SelectColsQualified() string {
 	return "" + a.SQLTablename + ".id," + a.SQLTablename + ".ipversion, " + a.SQLTablename + ".name, " + a.SQLTablename + ".ip, " + a.SQLTablename + ".host"
 }
 
-func (a *DBIP) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.IP, error) {
+func (a *DBIP) FromRowsOld(ctx context.Context, rows *gosql.Rows) ([]*savepb.IP, error) {
 	var res []*savepb.IP
 	for rows.Next() {
 		foo := savepb.IP{Host: &savepb.Host{}}
@@ -356,6 +356,29 @@ func (a *DBIP) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.IP, er
 	}
 	return res, nil
 }
+func (a *DBIP) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.IP, error) {
+	var res []*savepb.IP
+	for rows.Next() {
+		// SCANNER:
+		foo := &savepb.IP{}
+		// create the non-nullable pointers
+		foo.Host = &savepb.Host{} // non-nullable
+		// create variables for scan results
+		scanTarget_0 := &foo.ID
+		scanTarget_1 := &foo.IPVersion
+		scanTarget_2 := &foo.Name
+		scanTarget_3 := &foo.IP
+		scanTarget_4 := &foo.Host.ID
+		err := rows.Scan(scanTarget_0, scanTarget_1, scanTarget_2, scanTarget_3, scanTarget_4)
+		// END SCANNER
+
+		if err != nil {
+			return nil, a.Error(ctx, "fromrow-scan", err)
+		}
+		res = append(res, foo)
+	}
+	return res, nil
+}
 
 /**********************************************************************
 * Helper to create table and columns
@@ -363,18 +386,35 @@ func (a *DBIP) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.IP, er
 func (a *DBIP) CreateTable(ctx context.Context) error {
 	csql := []string{
 		`create sequence if not exists ` + a.SQLTablename + `_seq;`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ipversion integer not null  ,name text not null  ,ip text not null  ,host bigint not null  references host (id) on delete cascade  );`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ipversion integer not null  ,name text not null  ,ip text not null  ,host bigint not null  references host (id) on delete cascade  );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ipversion integer not null ,name text not null ,ip text not null ,host bigint not null );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ipversion integer not null ,name text not null ,ip text not null ,host bigint not null );`,
 		`ALTER TABLE ip ADD COLUMN IF NOT EXISTS ipversion integer not null default 0;`,
 		`ALTER TABLE ip ADD COLUMN IF NOT EXISTS name text not null default '';`,
 		`ALTER TABLE ip ADD COLUMN IF NOT EXISTS ip text not null default '';`,
-		`ALTER TABLE ip ADD COLUMN IF NOT EXISTS host bigint not null references host (id) on delete cascade  default 0;`,
+		`ALTER TABLE ip ADD COLUMN IF NOT EXISTS host bigint not null default 0;`,
+
+		`ALTER TABLE ip_archive ADD COLUMN IF NOT EXISTS ipversion integer not null  default 0;`,
+		`ALTER TABLE ip_archive ADD COLUMN IF NOT EXISTS name text not null  default '';`,
+		`ALTER TABLE ip_archive ADD COLUMN IF NOT EXISTS ip text not null  default '';`,
+		`ALTER TABLE ip_archive ADD COLUMN IF NOT EXISTS host bigint not null  default 0;`,
 	}
+
 	for i, c := range csql {
 		_, e := a.DB.ExecContext(ctx, fmt.Sprintf("create_"+a.SQLTablename+"_%d", i), c)
 		if e != nil {
 			return e
 		}
+	}
+
+	// these are optional, expected to fail
+	csql = []string{
+		// Indices:
+
+		// Foreign keys:
+		`ALTER TABLE ip add constraint mkdb_fk_ip_host_hostid FOREIGN KEY (host) references host (id) on delete cascade ;`,
+	}
+	for i, c := range csql {
+		a.DB.ExecContextQuiet(ctx, fmt.Sprintf("create_"+a.SQLTablename+"_%d", i), c)
 	}
 	return nil
 }
@@ -388,9 +428,4 @@ func (a *DBIP) Error(ctx context.Context, q string, e error) error {
 	}
 	return fmt.Errorf("[table="+a.SQLTablename+", query=%s] Error: %s", q, e)
 }
-
-
-
-
-
 

@@ -437,7 +437,7 @@ func (a *DBPingEntry) SelectColsQualified() string {
 	return "" + a.SQLTablename + ".id," + a.SQLTablename + ".ip, " + a.SQLTablename + ".interval, " + a.SQLTablename + ".metrichostname, " + a.SQLTablename + ".pingerid, " + a.SQLTablename + ".label, " + a.SQLTablename + ".ipversion, " + a.SQLTablename + ".isactive"
 }
 
-func (a *DBPingEntry) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.PingEntry, error) {
+func (a *DBPingEntry) FromRowsOld(ctx context.Context, rows *gosql.Rows) ([]*savepb.PingEntry, error) {
 	var res []*savepb.PingEntry
 	for rows.Next() {
 		foo := savepb.PingEntry{}
@@ -449,6 +449,31 @@ func (a *DBPingEntry) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb
 	}
 	return res, nil
 }
+func (a *DBPingEntry) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.PingEntry, error) {
+	var res []*savepb.PingEntry
+	for rows.Next() {
+		// SCANNER:
+		foo := &savepb.PingEntry{}
+		// create the non-nullable pointers
+		// create variables for scan results
+		scanTarget_0 := &foo.ID
+		scanTarget_1 := &foo.IP
+		scanTarget_2 := &foo.Interval
+		scanTarget_3 := &foo.MetricHostName
+		scanTarget_4 := &foo.PingerID
+		scanTarget_5 := &foo.Label
+		scanTarget_6 := &foo.IPVersion
+		scanTarget_7 := &foo.IsActive
+		err := rows.Scan(scanTarget_0, scanTarget_1, scanTarget_2, scanTarget_3, scanTarget_4, scanTarget_5, scanTarget_6, scanTarget_7)
+		// END SCANNER
+
+		if err != nil {
+			return nil, a.Error(ctx, "fromrow-scan", err)
+		}
+		res = append(res, foo)
+	}
+	return res, nil
+}
 
 /**********************************************************************
 * Helper to create table and columns
@@ -456,8 +481,8 @@ func (a *DBPingEntry) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb
 func (a *DBPingEntry) CreateTable(ctx context.Context) error {
 	csql := []string{
 		`create sequence if not exists ` + a.SQLTablename + `_seq;`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null  ,interval integer not null  ,metrichostname text not null  ,pingerid text not null  ,label text not null  ,ipversion integer not null  ,isactive boolean not null  );`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null  ,interval integer not null  ,metrichostname text not null  ,pingerid text not null  ,label text not null  ,ipversion integer not null  ,isactive boolean not null  );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null ,interval integer not null ,metrichostname text not null ,pingerid text not null ,label text not null ,ipversion integer not null ,isactive boolean not null );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null ,interval integer not null ,metrichostname text not null ,pingerid text not null ,label text not null ,ipversion integer not null ,isactive boolean not null );`,
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS ip text not null default '';`,
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS interval integer not null default 0;`,
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS metrichostname text not null default '';`,
@@ -465,12 +490,32 @@ func (a *DBPingEntry) CreateTable(ctx context.Context) error {
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS label text not null default '';`,
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS ipversion integer not null default 0;`,
 		`ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS isactive boolean not null default false;`,
+
+		`ALTER TABLE pingentry_archive ADD COLUMN IF NOT EXISTS ip text not null  default '';`,
+		`ALTER TABLE pingentry_archive ADD COLUMN IF NOT EXISTS interval integer not null  default 0;`,
+		`ALTER TABLE pingentry_archive ADD COLUMN IF NOT EXISTS metrichostname text not null  default '';`,
+		`ALTER TABLE pingentry_archive ADD COLUMN IF NOT EXISTS pingerid text not null  default '';`,
+		`ALTER TABLE pingentry_archive ADD COLUMN IF NOT EXISTS label text not null  default '';`,
+		`ALTER TABLE pingentry_archive ADD COLUMN IF NOT EXISTS ipversion integer not null  default 0;`,
+		`ALTER TABLE pingentry_archive ADD COLUMN IF NOT EXISTS isactive boolean not null  default false;`,
 	}
+
 	for i, c := range csql {
 		_, e := a.DB.ExecContext(ctx, fmt.Sprintf("create_"+a.SQLTablename+"_%d", i), c)
 		if e != nil {
 			return e
 		}
+	}
+
+	// these are optional, expected to fail
+	csql = []string{
+		// Indices:
+
+		// Foreign keys:
+
+	}
+	for i, c := range csql {
+		a.DB.ExecContextQuiet(ctx, fmt.Sprintf("create_"+a.SQLTablename+"_%d", i), c)
 	}
 	return nil
 }
@@ -484,9 +529,4 @@ func (a *DBPingEntry) Error(ctx context.Context, q string, e error) error {
 	}
 	return fmt.Errorf("[table="+a.SQLTablename+", query=%s] Error: %s", q, e)
 }
-
-
-
-
-
 

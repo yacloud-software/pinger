@@ -282,7 +282,7 @@ func (a *DBHost) SelectColsQualified() string {
 	return "" + a.SQLTablename + ".id," + a.SQLTablename + ".name, " + a.SQLTablename + ".pingerid"
 }
 
-func (a *DBHost) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Host, error) {
+func (a *DBHost) FromRowsOld(ctx context.Context, rows *gosql.Rows) ([]*savepb.Host, error) {
 	var res []*savepb.Host
 	for rows.Next() {
 		foo := savepb.Host{}
@@ -294,6 +294,26 @@ func (a *DBHost) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Host
 	}
 	return res, nil
 }
+func (a *DBHost) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Host, error) {
+	var res []*savepb.Host
+	for rows.Next() {
+		// SCANNER:
+		foo := &savepb.Host{}
+		// create the non-nullable pointers
+		// create variables for scan results
+		scanTarget_0 := &foo.ID
+		scanTarget_1 := &foo.Name
+		scanTarget_2 := &foo.PingerID
+		err := rows.Scan(scanTarget_0, scanTarget_1, scanTarget_2)
+		// END SCANNER
+
+		if err != nil {
+			return nil, a.Error(ctx, "fromrow-scan", err)
+		}
+		res = append(res, foo)
+	}
+	return res, nil
+}
 
 /**********************************************************************
 * Helper to create table and columns
@@ -301,16 +321,31 @@ func (a *DBHost) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Host
 func (a *DBHost) CreateTable(ctx context.Context) error {
 	csql := []string{
 		`create sequence if not exists ` + a.SQLTablename + `_seq;`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),name text not null  ,pingerid text not null  );`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),name text not null  ,pingerid text not null  );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),name text not null ,pingerid text not null );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),name text not null ,pingerid text not null );`,
 		`ALTER TABLE host ADD COLUMN IF NOT EXISTS name text not null default '';`,
 		`ALTER TABLE host ADD COLUMN IF NOT EXISTS pingerid text not null default '';`,
+
+		`ALTER TABLE host_archive ADD COLUMN IF NOT EXISTS name text not null  default '';`,
+		`ALTER TABLE host_archive ADD COLUMN IF NOT EXISTS pingerid text not null  default '';`,
 	}
+
 	for i, c := range csql {
 		_, e := a.DB.ExecContext(ctx, fmt.Sprintf("create_"+a.SQLTablename+"_%d", i), c)
 		if e != nil {
 			return e
 		}
+	}
+
+	// these are optional, expected to fail
+	csql = []string{
+		// Indices:
+
+		// Foreign keys:
+
+	}
+	for i, c := range csql {
+		a.DB.ExecContextQuiet(ctx, fmt.Sprintf("create_"+a.SQLTablename+"_%d", i), c)
 	}
 	return nil
 }
@@ -324,9 +359,4 @@ func (a *DBHost) Error(ctx context.Context, q string, e error) error {
 	}
 	return fmt.Errorf("[table="+a.SQLTablename+", query=%s] Error: %s", q, e)
 }
-
-
-
-
-
 

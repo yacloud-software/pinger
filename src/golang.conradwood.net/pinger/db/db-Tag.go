@@ -251,7 +251,7 @@ func (a *DBTag) SelectColsQualified() string {
 	return "" + a.SQLTablename + ".id," + a.SQLTablename + ".tagname"
 }
 
-func (a *DBTag) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Tag, error) {
+func (a *DBTag) FromRowsOld(ctx context.Context, rows *gosql.Rows) ([]*savepb.Tag, error) {
 	var res []*savepb.Tag
 	for rows.Next() {
 		foo := savepb.Tag{}
@@ -263,6 +263,25 @@ func (a *DBTag) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Tag, 
 	}
 	return res, nil
 }
+func (a *DBTag) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Tag, error) {
+	var res []*savepb.Tag
+	for rows.Next() {
+		// SCANNER:
+		foo := &savepb.Tag{}
+		// create the non-nullable pointers
+		// create variables for scan results
+		scanTarget_0 := &foo.ID
+		scanTarget_1 := &foo.TagName
+		err := rows.Scan(scanTarget_0, scanTarget_1)
+		// END SCANNER
+
+		if err != nil {
+			return nil, a.Error(ctx, "fromrow-scan", err)
+		}
+		res = append(res, foo)
+	}
+	return res, nil
+}
 
 /**********************************************************************
 * Helper to create table and columns
@@ -270,15 +289,29 @@ func (a *DBTag) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.Tag, 
 func (a *DBTag) CreateTable(ctx context.Context) error {
 	csql := []string{
 		`create sequence if not exists ` + a.SQLTablename + `_seq;`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),tagname text not null  );`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),tagname text not null  );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),tagname text not null );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),tagname text not null );`,
 		`ALTER TABLE tag ADD COLUMN IF NOT EXISTS tagname text not null default '';`,
+
+		`ALTER TABLE tag_archive ADD COLUMN IF NOT EXISTS tagname text not null  default '';`,
 	}
+
 	for i, c := range csql {
 		_, e := a.DB.ExecContext(ctx, fmt.Sprintf("create_"+a.SQLTablename+"_%d", i), c)
 		if e != nil {
 			return e
 		}
+	}
+
+	// these are optional, expected to fail
+	csql = []string{
+		// Indices:
+
+		// Foreign keys:
+
+	}
+	for i, c := range csql {
+		a.DB.ExecContextQuiet(ctx, fmt.Sprintf("create_"+a.SQLTablename+"_%d", i), c)
 	}
 	return nil
 }
@@ -292,9 +325,4 @@ func (a *DBTag) Error(ctx context.Context, q string, e error) error {
 	}
 	return fmt.Errorf("[table="+a.SQLTablename+", query=%s] Error: %s", q, e)
 }
-
-
-
-
-
 
