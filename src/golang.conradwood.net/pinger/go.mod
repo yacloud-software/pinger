@@ -8,7 +8,7 @@ require (
 	github.com/go-ping/ping v1.1.0
 	golang.conradwood.net/apis/common v1.1.2965
 	golang.conradwood.net/apis/pinger v1.1.1697
-	golang.conradwood.net/go-easyops v0.1.28766
+	golang.conradwood.net/go-easyops v0.1.28819
 	golang.singingcat.net/scgolib v0.1.28302
 	google.golang.org/grpc v1.65.0
 )
