@@ -1,10 +1,11 @@
 package main
 
 import (
-	pb "golang.conradwood.net/apis/pinger"
-	"golang.conradwood.net/go-easyops/prometheus"
 	"sync"
 	"time"
+
+	pb "golang.conradwood.net/apis/pinger"
+	"golang.conradwood.net/go-easyops/prometheus"
 )
 
 var (
@@ -17,6 +18,13 @@ var (
 		},
 		[]string{"pingerid", "ip", "name", "tag"},
 	)
+	pingSpeed = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Name: "pinger_target_speed",
+			Help: "V=2 U=none DESC=ping latency in seconds",
+		},
+		[]string{"pingerid", "ip", "name", "tag"},
+	)
 )
 
 type PingState struct {
@@ -24,6 +32,7 @@ type PingState struct {
 	lastAttempt           time.Time
 	last_failed_ping      time.Time
 	last_successful_ping  time.Time
+	last_latency          time.Duration
 	first_successful_ping time.Time
 	first_failed_ping     time.Time
 	failctr               int
@@ -31,7 +40,7 @@ type PingState struct {
 }
 
 func init() {
-	prometheus.MustRegister(pingStatusGauge)
+	prometheus.MustRegister(pingStatusGauge, pingSpeed)
 }
 func getAllPingStates() []*PingState {
 	var res []*PingState
@@ -65,8 +74,9 @@ func (ps *PingState) Failed() {
 	ps.successctr = 0
 	ps.UpdateGauge()
 }
-func (ps *PingState) Success() {
+func (ps *PingState) Success(td time.Duration) {
 	now := time.Now()
+	ps.last_latency = td
 	ps.last_successful_ping = now
 	if ps.successctr == 0 {
 		ps.first_successful_ping = now
@@ -111,9 +121,3 @@ func (ps *PingState) PingTargetStatus() *pb.PingTargetStatus {
 
 	return res
 }
-
-
-
-
-
-

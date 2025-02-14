@@ -4,6 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/go-ping/ping"
 	"golang.conradwood.net/apis/common"
 	pb "golang.conradwood.net/apis/pinger"
@@ -12,8 +15,6 @@ import (
 	"golang.conradwood.net/go-easyops/utils"
 	"golang.singingcat.net/scgolib/goodness"
 	"google.golang.org/grpc"
-	"os"
-	"time"
 )
 
 var (
@@ -71,6 +72,7 @@ func pingstuff() {
 		ps.lastAttempt = now
 		prefix := fmt.Sprintf("[pinglist %s] ", ps.pe.IP)
 		pr, err := singlePing(prefix, ps.pe.IP)
+		latency := time.Since(now)
 		if err != nil {
 			reportStateUpstream(ps, false)
 			ps.Failed()
@@ -80,7 +82,7 @@ func pingstuff() {
 		if pr != nil {
 			reportStateUpstream(ps, pr.Success)
 			if pr.Success {
-				ps.Success()
+				ps.Success(latency)
 			} else {
 				ps.Failed()
 			}
@@ -196,9 +198,3 @@ func debugf(format string, args ...interface{}) {
 	}
 	fmt.Printf(format, args...)
 }
-
-
-
-
-
-
