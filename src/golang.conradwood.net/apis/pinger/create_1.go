@@ -4,7 +4,8 @@
 */
 
 /* geninfo:
-   filename  : protos/golang.conradwood.net/apis/pinger/pinger.proto
+   rendererv : 2
+   filename  : golang.conradwood.net/apis/pinger/pinger.proto
    gopackage : golang.conradwood.net/apis/pinger
    importname: ai_0
    clientfunc: GetPinger

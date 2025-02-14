@@ -16,21 +16,28 @@ var (
 			Name: "pinger_target_status",
 			Help: "V=2 U=none DESC=reachable(2) or not(1)",
 		},
-		[]string{"pingerid", "ip", "name", "tag"},
+		[]string{"pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
 	pingSpeed = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
 			Name: "pinger_target_speed",
 			Help: "V=2 U=none DESC=ping latency in seconds",
 		},
-		[]string{"pingerid", "ip", "name", "tag"},
+		[]string{"pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
 	pingSpeedCtr = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "pinger_target_speedctr",
 			Help: "V=2 U=none DESC=ping latency added each successful ping",
 		},
-		[]string{"pingerid", "ip", "name", "tag"},
+		[]string{"pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
+	)
+	pingSuccessCtr = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "pinger_target_successctr",
+			Help: "V=2 U=none DESC=ping latency added each successful ping",
+		},
+		[]string{"pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
 )
 
@@ -47,7 +54,7 @@ type PingState struct {
 }
 
 func init() {
-	prometheus.MustRegister(pingStatusGauge, pingSpeed, pingSpeedCtr)
+	prometheus.MustRegister(pingStatusGauge, pingSpeed, pingSpeedCtr, pingSuccessCtr)
 }
 func getAllPingStates() []*PingState {
 	var res []*PingState
@@ -90,6 +97,7 @@ func (ps *PingState) Success(td time.Duration) {
 	}
 	ps.successctr++
 	ps.failctr = 0
+	pingSuccessCtr.With(ps.labels()).Inc()
 	ps.UpdateGauge()
 }
 func (ps *PingState) IsReachable() bool {
@@ -98,12 +106,19 @@ func (ps *PingState) IsReachable() bool {
 	}
 	return false
 }
-func (ps *PingState) UpdateGauge() {
+func (ps *PingState) labels() prometheus.Labels {
 	l := prometheus.Labels{"pingerid": *pingerid,
 		"ip":   ps.pe.IP,
 		"name": ps.pe.MetricHostName,
 		"tag":  ps.pe.Label,
+		"tag2": ps.pe.Label2,
+		"tag3": ps.pe.Label3,
+		"tag4": ps.pe.Label4,
 	}
+	return l
+}
+func (ps *PingState) UpdateGauge() {
+	l := ps.labels()
 	val := 0
 	if ps.successctr > 0 {
 		val = 2
