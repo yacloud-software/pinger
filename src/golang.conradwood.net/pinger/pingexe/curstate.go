@@ -104,6 +104,9 @@ func (ps *PingState) UpdateGauge() {
 		val = 1
 	}
 	pingStatusGauge.With(l).Set(float64(val))
+	if ps.failctr == 0 {
+		pingSpeed.With(l).Observe(ps.last_latency.Seconds())
+	}
 }
 func (ps *PingState) PingTargetStatus() *pb.PingTargetStatus {
 	pe := ps.pe
@@ -111,6 +114,7 @@ func (ps *PingState) PingTargetStatus() *pb.PingTargetStatus {
 		IP:   pe.IP,
 		Name: pe.MetricHostName,
 	}
+
 	if ps.successctr > 0 {
 		res.Since = uint32(ps.first_successful_ping.Unix())
 		res.Reachable = true
