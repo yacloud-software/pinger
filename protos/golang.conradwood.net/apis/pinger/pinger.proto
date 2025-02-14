@@ -30,7 +30,10 @@ message PingEntry {
   string PingerID=5;
   string Label=6;
   uint32 IPVersion=7; // either 4 or 6
-  bool IsActive=8; // entry ignored if falsey
+  bool IsActive=8; // entry ignored if false
+  string Label2=9; // optional filtering, default: ""
+  string Label3=10; // optional filtering default: ""
+  string Label4=11; // optional filtering default: ""
 }
 message PingTargetStatus {
   string IP=1;
