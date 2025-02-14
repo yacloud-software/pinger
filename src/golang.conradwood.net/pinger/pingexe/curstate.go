@@ -27,7 +27,7 @@ var (
 	)
 	pingSpeedCtr = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "pinger_target_speed",
+			Name: "pinger_target_speedctr",
 			Help: "V=2 U=none DESC=ping latency added each successful ping",
 		},
 		[]string{"pingerid", "ip", "name", "tag"},
