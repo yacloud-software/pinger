@@ -25,6 +25,13 @@ var (
 		},
 		[]string{"pingerid", "ip", "name", "tag"},
 	)
+	pingSpeedCtr = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "pinger_target_speed",
+			Help: "V=2 U=none DESC=ping latency added each successful ping",
+		},
+		[]string{"pingerid", "ip", "name", "tag"},
+	)
 )
 
 type PingState struct {
@@ -40,7 +47,7 @@ type PingState struct {
 }
 
 func init() {
-	prometheus.MustRegister(pingStatusGauge, pingSpeed)
+	prometheus.MustRegister(pingStatusGauge, pingSpeed, pingSpeedCtr)
 }
 func getAllPingStates() []*PingState {
 	var res []*PingState
@@ -105,7 +112,9 @@ func (ps *PingState) UpdateGauge() {
 	}
 	pingStatusGauge.With(l).Set(float64(val))
 	if ps.failctr == 0 {
-		pingSpeed.With(l).Observe(ps.last_latency.Seconds())
+		d := ps.last_latency.Seconds()
+		pingSpeed.With(l).Observe(d)
+		pingSpeedCtr.With(l).Add(d)
 	}
 }
 func (ps *PingState) PingTargetStatus() *pb.PingTargetStatus {
