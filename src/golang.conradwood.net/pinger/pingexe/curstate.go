@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -16,28 +17,28 @@ var (
 			Name: "pinger_target_status",
 			Help: "V=2 U=none DESC=reachable(2) or not(1)",
 		},
-		[]string{"pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
+		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
 	pingSpeed = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
 			Name: "pinger_target_speed",
 			Help: "V=2 U=none DESC=ping latency in seconds",
 		},
-		[]string{"pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
+		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
 	pingSpeedCtr = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "pinger_target_speedctr",
 			Help: "V=2 U=none DESC=ping latency added each successful ping",
 		},
-		[]string{"pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
+		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
 	pingSuccessCtr = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "pinger_target_successctr",
 			Help: "V=2 U=none DESC=ping latency added each successful ping",
 		},
-		[]string{"pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
+		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
 )
 
@@ -107,13 +108,15 @@ func (ps *PingState) IsReachable() bool {
 	return false
 }
 func (ps *PingState) labels() prometheus.Labels {
-	l := prometheus.Labels{"pingerid": *pingerid,
-		"ip":   ps.pe.IP,
-		"name": ps.pe.MetricHostName,
-		"tag":  ps.pe.Label,
-		"tag2": ps.pe.Label2,
-		"tag3": ps.pe.Label3,
-		"tag4": ps.pe.Label4,
+	l := prometheus.Labels{
+		"entryid":  fmt.Sprintf("%d", ps.pe.ID),
+		"pingerid": *pingerid,
+		"ip":       ps.pe.IP,
+		"name":     ps.pe.MetricHostName,
+		"tag":      ps.pe.Label,
+		"tag2":     ps.pe.Label2,
+		"tag3":     ps.pe.Label3,
+		"tag4":     ps.pe.Label4,
 	}
 	return l
 }
