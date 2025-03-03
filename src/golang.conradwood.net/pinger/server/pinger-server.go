@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"golang.conradwood.net/apis/common"
+	"golang.conradwood.net/apis/pinger"
 	pb "golang.conradwood.net/apis/pinger"
 	"golang.conradwood.net/go-easyops/errors"
 	"golang.conradwood.net/go-easyops/server"
@@ -76,12 +77,18 @@ func (e *echoServer) GetPingList(ctx context.Context, req *pb.PingListRequest) (
 	}
 	res := &pb.PingList{}
 
-	var entries []*pb.PingEntry
+	entries, err := GetRoutesFromNetRoutes(req.PingerID)
+	if err != nil {
+		fmt.Printf("failed to get netroutes for \"%s\"\n", err)
+	}
 	for _, e := range ape {
 		if e.IsActive == false {
 			continue
 		}
-		entries = append(entries, e)
+		// exists already?
+		if find_entry(entries, e) != nil {
+			continue
+		}
 		if e.IP == "" {
 			e.IP, err = dc.Get(e.MetricHostName, e.IPVersion)
 			if err != nil {
@@ -89,15 +96,10 @@ func (e *echoServer) GetPingList(ctx context.Context, req *pb.PingListRequest) (
 
 			}
 		}
+		entries = append(entries, e)
+
 	}
 	res.Entries = entries
-
-	ne_entries, err := GetRoutesFromNetRoutes(req.PingerID)
-	if err != nil {
-		fmt.Printf("failed to get netroutes for \"%s\"\n", err)
-	} else {
-		res.Entries = append(res.Entries, ne_entries...)
-	}
 
 	if *debug {
 		fmt.Printf("Returned %d entries to pinger %s\n", len(res.Entries), req.PingerID)
@@ -131,4 +133,23 @@ func (e *echoServer) GetPingStatus(ctx context.Context, req *common.Void) (*pb.P
 func get_ping_entry_by_id(ctx context.Context, ID uint64) (*pb.PingEntry, error) {
 	r, err := pedb.ByID(ctx, ID)
 	return r, err
+}
+
+func find_entry(entries []*pinger.PingEntry, e *pinger.PingEntry) *pinger.PingEntry {
+	for _, ex := range entries {
+		if ex.IP != e.IP {
+			continue
+		}
+		if ex.IPVersion != e.IPVersion {
+			continue
+		}
+		if ex.MetricHostName != e.MetricHostName {
+			continue
+		}
+		if ex.PingerID != e.PingerID {
+			continue
+		}
+		return ex
+	}
+	return nil
 }
