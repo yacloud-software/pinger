@@ -7,9 +7,17 @@ import (
 
 	"golang.conradwood.net/apis/common"
 	"golang.conradwood.net/apis/pinger"
+	"golang.conradwood.net/go-easyops/auth"
+	"golang.conradwood.net/go-easyops/errors"
 )
 
 func (e *echoServer) GetStatusMatrix(ctx context.Context, req *common.Void) (*pinger.StatusMatrixList, error) {
+	if auth.GetUser(ctx) == nil {
+		return nil, errors.Unauthenticated(ctx, "please log in")
+	}
+	if !auth.IsInGroup(ctx, "8") {
+		return nil, errors.AccessDenied(ctx, "missing group admin")
+	}
 	res := &pinger.StatusMatrixList{}
 	st := get_status_as_proto(ctx)
 
