@@ -5,7 +5,7 @@ go 1.22.2
 require (
 	github.com/go-ping/ping v1.2.0
 	github.com/goccy/go-graphviz v0.2.9
-	golang.conradwood.net/apis/common v1.1.3717
+	golang.conradwood.net/apis/common v1.1.3724
 	golang.conradwood.net/apis/netroutes v1.1.3717
 	golang.conradwood.net/apis/pinger v1.1.1697
 	golang.conradwood.net/go-easyops v0.1.34261

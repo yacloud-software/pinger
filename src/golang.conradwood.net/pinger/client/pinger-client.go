@@ -17,6 +17,7 @@ import (
 
 var (
 	echoClient pb.PingerClient
+	get_matrix = flag.Bool("matrix", false, "get status matrix of server")
 	hostid     = flag.Int("hostid", 0, "ID of host to operate on")
 	ip         = flag.String("ip", "", "ip address")
 	ipversion  = flag.Int("ip_version", 4, "version of ipaddress")
@@ -29,6 +30,10 @@ var (
 
 func main() {
 	flag.Parse()
+	if *get_matrix {
+		utils.Bail("failed to get status matrix", doMatrix())
+		os.Exit(0)
+	}
 	if *ip != "" || *name != "" {
 		utils.Bail("failed to add ip", AddIP())
 		os.Exit(0)
@@ -182,5 +187,35 @@ func AddIP() error {
 		return err
 	}
 	fmt.Printf("ID: %d\n", res.ID)
+	return nil
+}
+
+func doMatrix() error {
+	ctx := authremote.Context()
+	matrixlist, err := pb.GetPingerListClient().GetStatusMatrix(ctx, &common.Void{})
+	if err != nil {
+		return err
+	}
+	for _, matrix := range matrixlist.Matrices {
+		fmt.Printf("\n\n\nMatrix: \"%s\"\n", matrix.Name)
+		t := utils.Table{}
+		t.AddHeader(" ")
+		for _, ch := range matrix.ColumnHeadings {
+			t.AddHeader(ch.Hostname)
+		}
+		t.AddString(" ")
+		for _, ch := range matrix.ColumnHeadings {
+			t.AddString(ch.IP)
+		}
+		t.NewRow()
+		for _, row := range matrix.Rows {
+			t.AddString(row.Hostname)
+			for _, entry := range row.Entries {
+				t.AddString(entry.DisplayName)
+			}
+			t.NewRow()
+		}
+		fmt.Println(t.ToPrettyString())
+	}
 	return nil
 }

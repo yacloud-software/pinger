@@ -113,7 +113,7 @@ func pinger_list_update_loop() {
 	time.Sleep(time.Duration(2) * time.Second)
 	for {
 		pinger_list_update()
-		time.Sleep(30 * time.Second)
+		time.Sleep(time.Duration(30) * time.Second)
 	}
 }
 func pinger_list_update() {

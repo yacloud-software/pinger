@@ -108,7 +108,7 @@ func (e *echoServer) SetPingStatus(ctx context.Context, req *pb.SetPingStatusReq
 	st := get_status_tracker(req.ID)
 	if st == nil {
 		fmt.Printf("Submitted Status #%d from \"%s\" not valid\n", req.ID, req.PingerID)
-		return nil, errors.InvalidArgs(ctx, "invalid id", "invalid id")
+		return nil, errors.InvalidArgs(ctx, "invalid id", "invalid id %d", req.ID)
 	}
 	st.Set(req.Success)
 	return &common.Void{}, nil
