@@ -106,6 +106,31 @@ message AddIPRequest {
   uint32 IPVersion=3; // if IP is set, may be 0, otherwise must match type of IP
   string Name=4; 
 }
+message StatusMatrixList {
+  repeated StatusMatrix Matrices=1;
+}
+message StatusMatrix {
+  string Name=1; // e.g. "IPv6 Public"
+  uint32 Failed=2;
+  uint32 Working=3;
+  repeated MatrixRow Rows=4;
+  repeated MatrixColumnHeading ColumnHeadings=5;
+}
+message MatrixColumnHeading {
+  string DisplayName=1;
+  string Hostname=2;
+  string IP=3;
+}
+message MatrixRow {
+  string Hostname=1; // the one that pings all the other ones (pingerid)
+  repeated MatrixEntry Entries=2;
+}
+message MatrixEntry {
+  bool Reachable=1;
+  bool Tested=2;
+  string DisplayName=3; // helpfully say something meaningful like "N/A" or "OK" or "FAILED"
+  string DisplayColour=4;
+}
 
 /* this service "pings"  IP Addresses. it needs special permissions to run
 e.g. setcap cap_net_raw=+ep //home/cnw/go/bin/pinger-server 
@@ -134,4 +159,6 @@ service PingerList {
   rpc AddTag(AddTagRequest) returns (TagList);
   // remove tag from host
   rpc RemoveTag(RemoveTagRequest) returns (TagList);
+  // get status matrix
+  rpc GetStatusMatrix(common.Void) returns (StatusMatrixList);
 }
