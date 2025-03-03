@@ -3,12 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+
 	"golang.conradwood.net/apis/common"
 	pb "golang.conradwood.net/apis/pinger"
 	"golang.conradwood.net/go-easyops/authremote"
 	"golang.conradwood.net/go-easyops/utils"
-	"os"
-	"sync"
+	"golang.conradwood.net/pinger/dot"
 )
 
 var (
@@ -132,6 +136,27 @@ func AllStatus() error {
 		t.NewRow()
 	}
 	fmt.Println(t.ToPrettyString())
+	dotstring, err := dot.GenerateDotFromPingStatus(res)
+	if err != nil {
+		return err
+	}
+	fname := "/tmp/pinger.dot"
+	err = utils.WriteFile(fname, []byte(dotstring))
+	if err != nil {
+		return err
+	}
+	pngname := strings.TrimSuffix(fname, filepath.Ext(fname)) + ".png"
+	bpng, err := dot.GeneratePNG(dotstring)
+	if err != nil {
+		return err
+	}
+	err = utils.WriteFile(pngname, bpng)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Dot file in %s, use below to generate a png\n", fname)
+	fmt.Printf("dot -Tpng %s -o %s\n", fname, pngname)
+
 	return nil
 }
 func AddHost() error {
@@ -159,9 +184,3 @@ func AddIP() error {
 	fmt.Printf("ID: %d\n", res.ID)
 	return nil
 }
-
-
-
-
-
-

@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	pb "golang.conradwood.net/apis/pinger"
 	"sync"
 	"time"
+
+	pb "golang.conradwood.net/apis/pinger"
 )
 
 var (
@@ -57,6 +58,9 @@ func get_status_as_proto(ctx context.Context) []*pb.PingStatus {
 			fmt.Printf("failed to get entry: %s\n", err)
 			continue
 		}
+		if !pe.IsActive {
+			continue
+		}
 		ps := &pb.PingStatus{
 			PingEntry: pe,
 			Currently: st.state,
@@ -65,16 +69,10 @@ func get_status_as_proto(ctx context.Context) []*pb.PingStatus {
 		if pe.IP == "" {
 			pe.IP, err = dc.Get(pe.MetricHostName, pe.IPVersion)
 			if err != nil {
-				fmt.Printf("Failed to resolve: %s\n", err)
+				fmt.Printf("status entryid #%d: Failed to resolve: %s\n", pe.ID, err)
 			}
 		}
 		res = append(res, ps)
 	}
 	return res
 }
-
-
-
-
-
-
