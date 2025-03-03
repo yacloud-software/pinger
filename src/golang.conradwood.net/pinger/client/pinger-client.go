@@ -13,6 +13,7 @@ import (
 	"golang.conradwood.net/go-easyops/authremote"
 	"golang.conradwood.net/go-easyops/utils"
 	"golang.conradwood.net/pinger/dot"
+	"golang.conradwood.net/pinger/matrix"
 )
 
 var (
@@ -192,7 +193,19 @@ func AddIP() error {
 
 func doMatrix() error {
 	ctx := authremote.Context()
-	matrixlist, err := pb.GetPingerListClient().GetStatusMatrix(ctx, &common.Void{})
+	local := true
+	var err error
+	var matrixlist *pb.StatusMatrixList
+	if local {
+		st, err := pb.GetPingerListClient().GetPingStatus(ctx, &common.Void{})
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Creating matrix for %d status\n", len(st.Status))
+		matrixlist, err = matrix.GetStatusMatrixList(ctx, st.Status)
+	} else {
+		matrixlist, err = pb.GetPingerListClient().GetStatusMatrix(ctx, &common.Void{})
+	}
 	if err != nil {
 		return err
 	}
@@ -201,12 +214,9 @@ func doMatrix() error {
 		t := utils.Table{}
 		t.AddHeader(" ")
 		for _, ch := range matrix.ColumnHeadings {
-			t.AddHeader(ch.Hostname)
+			t.AddHeader(ch.DisplayName)
 		}
-		t.AddString(" ")
-		for _, ch := range matrix.ColumnHeadings {
-			t.AddString(ch.IP)
-		}
+
 		t.NewRow()
 		for _, row := range matrix.Rows {
 			t.AddString(row.Hostname)
