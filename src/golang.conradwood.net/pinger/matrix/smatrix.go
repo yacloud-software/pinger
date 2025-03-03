@@ -1,10 +1,15 @@
 package matrix
 
 import (
+	"flag"
 	"fmt"
 	"sort"
 
 	"golang.conradwood.net/apis/pinger"
+)
+
+var (
+	debug = flag.Bool("debug_matrix", false, "debug mode for matrix")
 )
 
 type smatrix struct {
@@ -70,8 +75,19 @@ func (sm *smatrix) GetAllHostIPCombos() []*hostip {
 }
 
 func (h *hostip) GetPingStatusForColumn(col int) (string, *pinger.PingStatus) {
-	//	pslist := h.sm.PingerStatusListForHostIP(h.host, h.ip)
+	pslist := h.sm.PingerStatusListForHostIP(h.host, h.ip)
+	if col >= len(h.sm.known_pingers) {
+		return fmt.Sprintf("Col %d", col), nil
+	}
 	pinger := h.sm.known_pingers[col]
-	s := fmt.Sprintf("%s -> %s_%s", pinger, h.host, h.ip)
+	s := ""
+	if *debug {
+		s = fmt.Sprintf("%s -> %s_%s", pinger, h.host, h.ip)
+	}
+	for _, ps := range pslist {
+		if ps.PingEntry.PingerID == pinger {
+			return s, ps
+		}
+	}
 	return s, nil
 }
