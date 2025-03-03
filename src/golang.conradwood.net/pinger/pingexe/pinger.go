@@ -95,8 +95,9 @@ func reportStateUpstream(ps *PingState, result bool) {
 	debugf("Reporting upstream: %d (%v)\n", pe.ID, result)
 	ctx := authremote.Context()
 	r := &pb.SetPingStatusRequest{
-		ID:      pe.ID,
-		Success: result,
+		ID:       pe.ID,
+		Success:  result,
+		PingerID: *pingerid,
 	}
 	_, err := pb.GetPingerListClient().SetPingStatus(ctx, r)
 	if err != nil {

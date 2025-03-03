@@ -4,17 +4,20 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"sort"
+
 	"golang.conradwood.net/apis/common"
 	pb "golang.conradwood.net/apis/pinger"
 	"golang.conradwood.net/go-easyops/errors"
 	"golang.conradwood.net/go-easyops/server"
-	"sort"
+
 	//	"golang.conradwood.net/go-easyops/sql"
+	"os"
+
 	"golang.conradwood.net/go-easyops/utils"
 	"golang.conradwood.net/pinger/db"
 	"golang.singingcat.net/scgolib/goodness"
 	"google.golang.org/grpc"
-	"os"
 )
 
 var (
@@ -88,13 +91,26 @@ func (e *echoServer) GetPingList(ctx context.Context, req *pb.PingListRequest) (
 		}
 	}
 	res.Entries = entries
+
+	ne_entries, err := GetRoutesFromNetRoutes(req.PingerID)
+	if err != nil {
+		fmt.Printf("failed to get netroutes for \"%s\"\n", err)
+	} else {
+		res.Entries = append(res.Entries, ne_entries...)
+	}
+
 	if *debug {
 		fmt.Printf("Returned %d entries to pinger %s\n", len(res.Entries), req.PingerID)
 	}
 	return res, nil
 }
 func (e *echoServer) SetPingStatus(ctx context.Context, req *pb.SetPingStatusRequest) (*common.Void, error) {
-	get_status_tracker(req.ID).Set(req.Success)
+	st := get_status_tracker(req.ID)
+	if st == nil {
+		fmt.Printf("Submitted Status #%d from \"%s\" not valid\n", req.ID, req.PingerID)
+		return nil, errors.InvalidArgs(ctx, "invalid id", "invalid id")
+	}
+	st.Set(req.Success)
 	return &common.Void{}, nil
 }
 func (e *echoServer) GetPingStatus(ctx context.Context, req *common.Void) (*pb.PingStatusList, error) {
@@ -116,9 +132,3 @@ func get_ping_entry_by_id(ctx context.Context, ID uint64) (*pb.PingEntry, error)
 	r, err := pedb.ByID(ctx, ID)
 	return r, err
 }
-
-
-
-
-
-

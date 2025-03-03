@@ -21,6 +21,15 @@ type status struct {
 }
 
 func get_status_tracker(ID uint64) *status {
+	var err error
+	pe := GetPingEntryRouteByID(ID)
+	if pe == nil {
+		pe, err = get_ping_entry_by_id(context.Background(), ID)
+		if err != nil {
+			fmt.Printf("failed to get entry: %s\n", err)
+			return nil
+		}
+	}
 	stlock.Lock()
 	defer stlock.Unlock()
 	res, found := status_trackers[ID]
@@ -51,12 +60,15 @@ func get_status_as_proto(ctx context.Context) []*pb.PingStatus {
 	stlock.Unlock()
 
 	var res []*pb.PingStatus
-
+	var err error
 	for _, st := range sts {
-		pe, err := get_ping_entry_by_id(ctx, st.ID)
-		if err != nil {
-			fmt.Printf("failed to get entry: %s\n", err)
-			continue
+		pe := GetPingEntryRouteByID(st.ID)
+		if pe == nil {
+			pe, err = get_ping_entry_by_id(ctx, st.ID)
+			if err != nil {
+				fmt.Printf("failed to get entry: %s\n", err)
+				continue
+			}
 		}
 		if !pe.IsActive {
 			continue
