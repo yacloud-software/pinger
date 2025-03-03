@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"golang.conradwood.net/apis/common"
 	"golang.conradwood.net/apis/netroutes"
 	"golang.conradwood.net/apis/pinger"
 	"golang.conradwood.net/go-easyops/authremote"
@@ -29,7 +28,11 @@ func GetPingEntryRouteByID(id uint64) *pinger.PingEntry {
 func GetRoutesFromNetRoutes(fromhost string) ([]*pinger.PingEntry, error) {
 	route_lock.Lock()
 	defer route_lock.Unlock()
-	routes, err := netroutes.GetNetRoutesClient().GetRoutes(authremote.Context(), &common.Void{})
+	req := &netroutes.RouteRequest{
+		IncludePublic:  true,
+		IncludePrivate: true,
+	}
+	routes, err := netroutes.GetNetRoutesClient().GetRoutes(authremote.Context(), req)
 	if err != nil {
 		return nil, err
 	}
