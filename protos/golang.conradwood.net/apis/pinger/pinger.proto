@@ -117,13 +117,12 @@ message StatusMatrix {
   repeated MatrixColumnHeading ColumnHeadings=5;
 }
 message MatrixColumnHeading {
-  string DisplayName=1;
-  string Hostname=2;
-  string IP=3;
+  string DisplayName=1; // pinger
 }
 message MatrixRow {
-  string Hostname=1; // the one that pings all the other ones (pingerid)
-  repeated MatrixEntry Entries=2;
+  string Hostname=1; // the one that is being pinged
+  string IP=2;
+  repeated MatrixEntry Entries=3;
 }
 message MatrixEntry {
   bool Reachable=1;
