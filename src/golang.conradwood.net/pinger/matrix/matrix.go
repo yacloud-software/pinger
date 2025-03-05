@@ -9,6 +9,12 @@ import (
 	"golang.conradwood.net/go-easyops/utils"
 )
 
+const (
+	COLOUR_GOOD = "#00CC00"
+	COLOUR_FAIL = "red"
+	COLOUR_WARN = "yellow"
+)
+
 type filter_def struct {
 	name    string
 	version uint32
@@ -103,14 +109,14 @@ func build_status_matrix(st []*pinger.PingStatus) (*pinger.StatusMatrix, error) 
 					Reachable:     pingstatus.Currently,
 					Tested:        true,
 					DisplayName:   "OK" + s,
-					DisplayColour: "green",
+					DisplayColour: COLOUR_GOOD,
 				}
 				if pme.Reachable {
 					res.Working++
 				} else {
 					res.Failed++
 					pme.DisplayName = "FAIL" + s
-					pme.DisplayColour = "red"
+					pme.DisplayColour = COLOUR_FAIL
 				}
 				row.Entries[col] = pme
 			}

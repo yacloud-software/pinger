@@ -67,34 +67,21 @@ func build_by_network_matrix(st []*pinger.PingStatus) (*pinger.StatusMatrix, err
 		res.Rows = append(res.Rows, mrow)
 		for _, c := range row.Cells() {
 			s := ""
+			colour := ""
 			no := c.Content()
 			if no != nil {
 				n := no.(*netstatus)
 				s = n.String()
+				colour = n.Colour()
 			}
 			me := &pinger.MatrixEntry{
-				DisplayName: s,
+				DisplayName:   s,
+				DisplayColour: colour,
 			}
 			mrow.Entries = append(mrow.Entries, me)
 		}
 	}
-	t := utils.Table{}
-	t.AddHeaders("/")
-	t.AddHeaders(m.GetColumnNames()...)
-	for _, row := range m.Rows() {
-		t.AddString(row.Name())
-		for _, c := range row.Cells() {
-			s := ""
-			no := c.Content()
-			if no != nil {
-				n := no.(*netstatus)
-				s = n.String()
-			}
-			t.AddString(s)
-		}
-		t.NewRow()
-	}
-	fmt.Println(t.ToPrettyString())
+
 	return res, nil
 }
 
@@ -113,6 +100,22 @@ func (n *netstatus) String() string {
 			status = "PARTIAL"
 		} else {
 			status = "FAIL"
+		}
+	}
+
+	return status
+}
+func (n *netstatus) Colour() string {
+	if n == nil {
+		return ""
+	}
+	status := COLOUR_GOOD
+	r := n.ctr
+	if r.failure_count > 0 {
+		if r.success_count > 0 {
+			status = COLOUR_WARN
+		} else {
+			status = COLOUR_FAIL
 		}
 	}
 
