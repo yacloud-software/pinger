@@ -108,22 +108,20 @@ func (nd *networkdef) findRecordForASN(nl *networklist, asn string) *networkdef_
 
 func lookup_net_info(ip string) *netinfo {
 	res := &netinfo{}
-	pips := ip
-	pip, net, err := net.ParseCIDR(ip)
-	if err == nil {
-		pips = fmt.Sprintf("%v", pip)
-	}
-	//	net_ip := fmt.Sprintf("%v", net.IP)
-	//	net_size, _ := net.Mask.Size()
 	b, err := utils.IsPrivateIP(ip)
 	if err != nil {
 		return res
 	}
 	if b {
-		res.asn = fmt.Sprintf("ASN_LOCAL_%v", net)
-		res.isp = "local"
-		return res
+		return lookup_private_net_info(ip)
 	}
+
+	pips := ip
+	pip, _, err := net.ParseCIDR(ip)
+	if err == nil {
+		pips = fmt.Sprintf("%v", pip)
+	}
+
 	lr, err := geoip.GetGeoIPClient().Lookup(authremote.Context(), &geoip.LookupRequest{IP: pips})
 	if err != nil {
 		fmt.Printf("No geoip lookup (%s)", err)
@@ -136,5 +134,22 @@ func lookup_net_info(ip string) *netinfo {
 	}
 	res.isp = isp
 	res.asn = lr.AS
+	return res
+}
+func lookup_private_net_info(ip string) *netinfo {
+	res := &netinfo{}
+
+	_, ipnet, err := net.ParseCIDR(ip)
+	if ipnet == nil || err != nil {
+		_, ipnet, err = net.ParseCIDR(ip + "/24")
+	}
+	if ipnet == nil {
+		res.asn = fmt.Sprintf("ASN_LOCAL_%v", ipnet)
+		res.isp = "local"
+		return res
+	}
+
+	res.asn = fmt.Sprintf("ASN_LOCAL_%v", ipnet)
+	res.isp = "local"
 	return res
 }

@@ -26,8 +26,9 @@ func GetStatusMatrixList(ctx context.Context, st []*pinger.PingStatus) (*pinger.
 	res := &pinger.StatusMatrixList{}
 
 	filters = []*filter_def{
-		&filter_def{name: "IPv4 (by network)", version: 4, private: false},
 		&filter_def{name: "IPv6 (by network)", version: 6, private: false},
+		&filter_def{name: "IPv4 (by network)", version: 4, private: false},
+		&filter_def{name: "IPv4 private (by network)", version: 4, private: true},
 	}
 	for _, f := range filters {
 		matrix_name := f.name

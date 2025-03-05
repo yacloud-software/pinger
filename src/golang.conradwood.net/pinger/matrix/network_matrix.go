@@ -46,9 +46,20 @@ func build_by_network_matrix(st []*pinger.PingStatus) (*pinger.StatusMatrix, err
 	}
 	for _, ps := range vst {
 		nrc := ps.PingEntry.NetRouteConfig
-		from_ip := find_source_ip_for_dest(nrc.FromHost, ps.PingEntry.IP)
+		to_ip := ps.PingEntry.IP
+		from_ip := find_source_ip_for_dest(nrc.FromHost, to_ip)
+		if from_ip == "" {
+			fmt.Printf("unable to find source ip on route %s -> %s\n", nrc.FromHost.Name, to_ip)
+			continue
+		}
 		from_net_info := lookup_net_info(from_ip)
-		to_net_info := lookup_net_info(ps.PingEntry.IP)
+		if from_net_info.asn == "" {
+			fmt.Printf("no from-net info for ip \"%s\"\n", from_ip)
+		}
+		to_net_info := lookup_net_info(to_ip)
+		if to_net_info.asn == "" {
+			fmt.Printf("no to-net info for ip \"%s\"\n", to_ip)
+		}
 		nl.Record(from_net_info.asn, to_net_info.asn, ps.Currently)
 	}
 
