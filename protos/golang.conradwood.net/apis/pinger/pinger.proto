@@ -39,6 +39,8 @@ message PingEntry {
 }
 message NetRouteConfig {
   netroutes.Route Route=1;
+  netroutes.Host FromHost=2;
+  netroutes.Host ToHost=3;
 }
 message PingTargetStatus {
   string IP=1;
