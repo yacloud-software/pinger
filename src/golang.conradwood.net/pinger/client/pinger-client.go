@@ -209,6 +209,10 @@ func doMatrix() error {
 	if err != nil {
 		return err
 	}
+	NO_DISPLAY := true
+	if NO_DISPLAY {
+		return nil
+	}
 	for _, matrix := range matrixlist.Matrices {
 		fmt.Printf("\n\n\nMatrix: \"%s\"\n", matrix.Name)
 		t := utils.Table{}

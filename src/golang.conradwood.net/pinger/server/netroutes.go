@@ -38,21 +38,31 @@ func GetRoutesFromNetRoutes(fromhost string) ([]*pinger.PingEntry, error) {
 	}
 	var res []*pinger.PingEntry
 	for _, route := range routes.Routes {
-		if route.FromHost != fromhost {
+		rfromhost := routes.Hosts[route.FromHost]
+		rtohost := routes.Hosts[route.ToHost]
+		if rfromhost == nil {
+			fmt.Printf("NO fromhost for ID #%d\n", route.FromHost)
 			continue
 		}
-		key := fmt.Sprintf("%s_%s", route.FromHost, route.ToIP)
+		if rtohost == nil {
+			fmt.Printf("NO tohost for ID #%d\n", route.ToHost)
+			continue
+		}
+		if rfromhost.Name != fromhost {
+			continue
+		}
+		key := fmt.Sprintf("%d_%s", route.FromHost, route.ToIP)
 		pe := known_routes[key]
 		if pe == nil {
 			pe = &pinger.PingEntry{
 				ID:             500,
 				IP:             route.ToIP,
 				Interval:       10,
-				MetricHostName: route.ToHost,
-				PingerID:       route.FromHost,
+				MetricHostName: rtohost.Name,
+				PingerID:       rfromhost.Name,
 				IPVersion:      route.IPVersion,
 				IsActive:       true,
-				NetRouteConfig: &pinger.NetRouteConfig{Route: route},
+				NetRouteConfig: &pinger.NetRouteConfig{FromHost: rfromhost, ToHost: rtohost, Route: route},
 			}
 			pe.ID = uint64(route_id)
 			route_id++
