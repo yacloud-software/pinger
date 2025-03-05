@@ -17,11 +17,16 @@ type networklist struct {
 }
 type networkdef struct {
 	sync.Mutex
-	asn       string
-	network   string
-	hosts     []string
-	successes []*networkdef // success to his net
-	failures  []*networkdef // failure to his net
+	asn     string
+	network string
+	hosts   []string
+	records []*networkdef_ctr // results between two networks
+
+}
+type networkdef_ctr struct {
+	to_network    *networkdef
+	success_count int
+	failure_count int
 }
 type netinfo struct {
 	asn string
@@ -64,6 +69,9 @@ func (nl *networklist) GetNetworks() []*networkdef {
 }
 
 func (nl *networklist) Record(from_asn, to_asn string, success bool) {
+	if from_asn == to_asn {
+		return
+	}
 	nl.Lock()
 	defer nl.Unlock()
 	from_net := nl.getNetByASN(from_asn)
@@ -76,36 +84,26 @@ func (nl *networklist) Record(from_asn, to_asn string, success bool) {
 		fmt.Printf("no to-net for \"%s\"\n", to_asn)
 		return
 	}
+	// find therecord, add it if necessary
+	record := from_net.findRecordForASN(nl, to_asn)
 	if success {
-		from_net.AddSuccess(to_net)
+		record.success_count++
 	} else {
-		from_net.AddFailure(to_net)
+		record.failure_count++
 	}
-
 }
-
-// record failure from this network to that ip
-func (nd *networkdef) AddFailure(ip_net *networkdef) {
-	nd.Lock()
-	defer nd.Unlock()
-	for _, n := range nd.failures {
-		if n.asn == ip_net.asn {
-			return
+func (nd *networkdef) findRecordForASN(nl *networklist, asn string) *networkdef_ctr {
+	for _, r := range nd.records {
+		if r.to_network.asn == asn {
+			return r
 		}
 	}
-	nd.failures = append(nd.failures, ip_net)
-}
-
-// record success from this network to that ip
-func (nd *networkdef) AddSuccess(ip_net *networkdef) {
-	nd.Lock()
-	defer nd.Unlock()
-	for _, n := range nd.successes {
-		if n.asn == ip_net.asn {
-			return
-		}
+	asn_net := nl.getNetByASN(asn)
+	r := &networkdef_ctr{
+		to_network: asn_net,
 	}
-	nd.successes = append(nd.successes, ip_net)
+	nd.records = append(nd.records, r)
+	return r
 }
 
 func lookup_net_info(ip string) *netinfo {

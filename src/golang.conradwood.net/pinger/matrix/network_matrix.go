@@ -8,6 +8,9 @@ import (
 	"golang.conradwood.net/go-easyops/utils"
 )
 
+type net_matrix struct {
+}
+
 // attempt to identify which networks do not route to which other network(s)
 func build_by_network_matrix(st []*pinger.PingStatus) (*pinger.StatusMatrix, error) {
 	// filter out any that do not have netroutes
@@ -49,24 +52,69 @@ func build_by_network_matrix(st []*pinger.PingStatus) (*pinger.StatusMatrix, err
 		nl.Record(from_net_info.asn, to_net_info.asn, ps.Currently)
 	}
 
-	t := utils.Table{}
-	for _, nets := range nl.GetNetworks() {
-		t.AddString(nets.asn)
-		for _, f := range nets.failures {
-			t.AddString(f.asn)
+	m := &amatrix{}
+	for _, net := range nl.GetNetworks() {
+		for _, r := range net.records {
+			m.SetCellByName(r.to_network.asn, net.asn, &netstatus{ctr: r})
 		}
-		t.NewRow()
 	}
-	fmt.Println(t.ToPrettyString())
-	t = utils.Table{}
-	for _, nets := range nl.GetNetworks() {
-		t.AddString(nets.asn)
-		for _, f := range nets.successes {
-			t.AddString(f.asn)
-		}
-		t.NewRow()
-	}
-	fmt.Println(t.ToPrettyString())
 
+	for _, s := range m.GetColumnNames() {
+		res.ColumnHeadings = append(res.ColumnHeadings, &pinger.MatrixColumnHeading{DisplayName: s})
+	}
+	for _, row := range m.Rows() {
+		mrow := &pinger.MatrixRow{Hostname: row.Name()}
+		res.Rows = append(res.Rows, mrow)
+		for _, c := range row.Cells() {
+			s := ""
+			no := c.Content()
+			if no != nil {
+				n := no.(*netstatus)
+				s = n.String()
+			}
+			me := &pinger.MatrixEntry{
+				DisplayName: s,
+			}
+			mrow.Entries = append(mrow.Entries, me)
+		}
+	}
+	t := utils.Table{}
+	t.AddHeaders("/")
+	t.AddHeaders(m.GetColumnNames()...)
+	for _, row := range m.Rows() {
+		t.AddString(row.Name())
+		for _, c := range row.Cells() {
+			s := ""
+			no := c.Content()
+			if no != nil {
+				n := no.(*netstatus)
+				s = n.String()
+			}
+			t.AddString(s)
+		}
+		t.NewRow()
+	}
+	fmt.Println(t.ToPrettyString())
 	return res, nil
+}
+
+type netstatus struct {
+	ctr *networkdef_ctr
+}
+
+func (n *netstatus) String() string {
+	if n == nil {
+		return ""
+	}
+	status := "OK"
+	r := n.ctr
+	if r.failure_count > 0 {
+		if r.success_count > 0 {
+			status = "PARTIAL"
+		} else {
+			status = "FAIL"
+		}
+	}
+
+	return status
 }

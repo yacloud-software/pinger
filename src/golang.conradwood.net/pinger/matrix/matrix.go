@@ -16,28 +16,13 @@ type filter_def struct {
 }
 
 func GetStatusMatrixList(ctx context.Context, st []*pinger.PingStatus) (*pinger.StatusMatrixList, error) {
-	filters := []*filter_def{
-		&filter_def{name: "IPv4", version: 4, private: false},
-		&filter_def{name: "IPv6", version: 6, private: false},
-		&filter_def{name: "IPv4 private", version: 4, private: true},
-	}
+	var filters []*filter_def
 	res := &pinger.StatusMatrixList{}
-
-	for _, f := range filters {
-		nst := filter_status_by_filterdef(st, f)
-		stm, err := build_status_matrix(nst)
-		if err != nil {
-			return nil, err
-		}
-		stm.Name = f.name
-		res.Matrices = append(res.Matrices, stm)
-	}
 
 	filters = []*filter_def{
 		&filter_def{name: "IPv4 (by network)", version: 4, private: false},
 		&filter_def{name: "IPv6 (by network)", version: 6, private: false},
 	}
-
 	for _, f := range filters {
 		matrix_name := f.name
 		fmt.Printf("Building network matrix \"%s\"\n", matrix_name)
@@ -47,6 +32,21 @@ func GetStatusMatrixList(ctx context.Context, st []*pinger.PingStatus) (*pinger.
 			return nil, err
 		}
 		stm.Name = matrix_name
+		res.Matrices = append(res.Matrices, stm)
+	}
+
+	filters = []*filter_def{
+		&filter_def{name: "IPv4", version: 4, private: false},
+		&filter_def{name: "IPv6", version: 6, private: false},
+		&filter_def{name: "IPv4 private", version: 4, private: true},
+	}
+	for _, f := range filters {
+		nst := filter_status_by_filterdef(st, f)
+		stm, err := build_status_matrix(nst)
+		if err != nil {
+			return nil, err
+		}
+		stm.Name = f.name
 		res.Matrices = append(res.Matrices, stm)
 	}
 

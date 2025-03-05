@@ -209,7 +209,7 @@ func doMatrix() error {
 	if err != nil {
 		return err
 	}
-	NO_DISPLAY := true
+	NO_DISPLAY := false
 	if NO_DISPLAY {
 		return nil
 	}
