@@ -46,6 +46,29 @@ func GetStatusMatrixList(ctx context.Context, st []*pinger.PingStatus) (*pinger.
 		res.Matrices = append(res.Matrices, stm)
 	}
 
+	for _, f := range filters {
+		nst := filter_status(st, func(this_st *pinger.PingStatus) bool {
+			if this_st.PingEntry.IPVersion != f.version {
+				return false
+			}
+			priv, err := utils.IsPrivateIP(this_st.PingEntry.IP)
+			if err != nil {
+				fmt.Printf("Entry #%d - Failed to parse ip %s: %s\n", this_st.PingEntry.ID, this_st.PingEntry.IP, err)
+			} else {
+				if priv != f.private {
+					return false
+				}
+			}
+			return true
+		})
+		stm, err := build_by_network_matrix(nst)
+		if err != nil {
+			return nil, err
+		}
+		stm.Name = f.name + " (by network)"
+		res.Matrices = append(res.Matrices, stm)
+	}
+
 	return res, nil
 }
 func filter_status(stlist []*pinger.PingStatus, f func(this_st *pinger.PingStatus) bool) []*pinger.PingStatus {

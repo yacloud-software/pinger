@@ -52,6 +52,7 @@ func GetRoutesFromNetRoutes(fromhost string) ([]*pinger.PingEntry, error) {
 				PingerID:       route.FromHost,
 				IPVersion:      route.IPVersion,
 				IsActive:       true,
+				NetRouteConfig: &pinger.NetRouteConfig{Route: route},
 			}
 			pe.ID = uint64(route_id)
 			route_id++
