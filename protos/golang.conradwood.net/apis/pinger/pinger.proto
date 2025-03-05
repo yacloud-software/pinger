@@ -4,6 +4,7 @@ package pinger;
 option go_package = "golang.conradwood.net/apis/pinger";
 option java_package = "net.conradwood.apis.pinger";
 import "golang.conradwood.net/apis/common/common.proto";
+import "golang.conradwood.net/apis/netroutes/netroutes.proto";
 
 // result of a single ping
 message PingResult {
@@ -34,6 +35,10 @@ message PingEntry {
   string Label2=9; // optional filtering, default: ""
   string Label3=10; // optional filtering default: ""
   string Label4=11; // optional filtering default: ""
+  NetRouteConfig NetRouteConfig=12;
+}
+message NetRouteConfig {
+  netroutes.Route Route=1;
 }
 message PingTargetStatus {
   string IP=1;
