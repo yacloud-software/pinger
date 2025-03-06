@@ -15,9 +15,10 @@ var (
 )
 
 type status struct {
-	ID    uint64
-	state bool
-	since time.Time
+	ID           uint64
+	state        bool
+	since        time.Time
+	last_updated time.Time // eventually they become stale and are removed
 }
 
 func reset_status_trackers() {
@@ -46,6 +47,7 @@ func get_status_tracker(ID uint64) *status {
 	return res
 }
 func (s *status) Set(b bool) {
+	s.last_updated = time.Now()
 	if s.state != b {
 		if *debug {
 			fmt.Printf("Changed status of pingentry #%d to %v\n", s.ID, b)
@@ -59,8 +61,17 @@ func (s *status) Set(b bool) {
 func get_status_as_proto(ctx context.Context) []*pb.PingStatus {
 	var sts []*status
 	stlock.Lock()
-	for _, v := range status_trackers {
-		sts = append(sts, v)
+	var remove []uint64
+	for k, v := range status_trackers {
+		if time.Since(v.last_updated) > time.Duration(10)*time.Minute {
+			remove = append(remove, k) // mark stale one
+		} else {
+			sts = append(sts, v)
+		}
+	}
+	// delete stale ones
+	for _, id := range remove {
+		delete(status_trackers, id)
 	}
 	stlock.Unlock()
 

@@ -131,6 +131,7 @@ func (e *echoServer) GetPingStatus(ctx context.Context, req *common.Void) (*pb.P
 	return res, nil
 }
 func (e *echoServer) Reset(ctx context.Context, req *common.Void) (*common.Void, error) {
+	reset_status_trackers()
 	return req, nil
 }
 func get_ping_entry_by_id(ctx context.Context, ID uint64) (*pb.PingEntry, error) {
