@@ -27,10 +27,15 @@ var (
 	pinger     = flag.String("pinger", "", "if set query that particular pinger")
 	iplist     = flag.Bool("iplist", false, "if true get list of ips")
 	status     = flag.Bool("status", false, "print status")
+	reset      = flag.Bool("reset", false, "reset all config and status")
 )
 
 func main() {
 	flag.Parse()
+	if *reset {
+		utils.Bail("failed to reset", doReset())
+		os.Exit(0)
+	}
 	if *get_matrix {
 		utils.Bail("failed to get status matrix", doMatrix())
 		os.Exit(0)
@@ -231,5 +236,14 @@ func doMatrix() error {
 		}
 		fmt.Println(t.ToPrettyString())
 	}
+	return nil
+}
+func doReset() error {
+	ctx := authremote.Context()
+	_, err := pb.GetPingerListClient().Reset(ctx, &common.Void{})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("reset done\n")
 	return nil
 }

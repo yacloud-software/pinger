@@ -6,6 +6,7 @@ require (
 	github.com/go-ping/ping v1.2.0
 	github.com/goccy/go-graphviz v0.2.9
 	golang.conradwood.net/apis/common v1.1.3750
+	golang.conradwood.net/apis/geoip v1.1.3739
 	golang.conradwood.net/apis/netroutes v1.1.3750
 	golang.conradwood.net/apis/pinger v1.1.1697
 	golang.conradwood.net/go-easyops v0.1.34261
@@ -39,7 +40,6 @@ require (
 	golang.conradwood.net/apis/deploymonkey v1.1.3750 // indirect
 	golang.conradwood.net/apis/errorlogger v1.1.3728 // indirect
 	golang.conradwood.net/apis/framework v1.1.3750 // indirect
-	golang.conradwood.net/apis/geoip v1.1.3739 // indirect
 	golang.conradwood.net/apis/getestservice v1.1.3728 // indirect
 	golang.conradwood.net/apis/goeasyops v1.1.3750 // indirect
 	golang.conradwood.net/apis/grafanadata v1.1.3750 // indirect

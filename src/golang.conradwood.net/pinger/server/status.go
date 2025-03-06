@@ -20,6 +20,11 @@ type status struct {
 	since time.Time
 }
 
+func reset_status_trackers() {
+	stlock.Lock()
+	status_trackers = make(map[uint64]*status)
+	stlock.Unlock()
+}
 func get_status_tracker(ID uint64) *status {
 	var err error
 	pe := GetPingEntryRouteByID(ID)
