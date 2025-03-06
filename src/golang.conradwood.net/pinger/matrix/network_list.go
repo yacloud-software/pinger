@@ -157,24 +157,29 @@ func lookup_net_info(ip string) *netinfo {
 }
 func lookup_private_net_info(ip string) *netinfo {
 	res := &netinfo{}
-
-	pip, pnet, _, err := utils.ParseIP(ip)
-	if err != nil {
+	i := 0
+try_again:
+	i++
+	pip, _, _, err := utils.ParseIP(ip)
+	if err != nil || i > 10 {
+		fmt.Printf("unable to parse \"%s\": %s\n", ip, err)
 		res.asn = fmt.Sprintf("ASN_INVALID")
 		res.isp = fmt.Sprintf("%s", err)
 		return res
 	}
-	if pnet == 32 {
-		ip = fmt.Sprintf("%s/24", pip)
-	}
-	_, ipnet, err := net.ParseCIDR(ip)
+	pipi, ipnet, err := net.ParseCIDR(ip)
 	if ipnet == nil || err != nil {
 		_, ipnet, err = net.ParseCIDR(ip + "/24")
 	}
 	if ipnet == nil {
-		res.asn = fmt.Sprintf("ASN_LOCAL_%v", ipnet)
-		res.isp = "local"
-		return res
+		ip = fmt.Sprintf("%s/24", pip)
+		goto try_again
+	}
+	pnet, _ := ipnet.Mask.Size()
+	fmt.Printf("NET: %d\n", pnet)
+	if pnet == 32 {
+		ip = fmt.Sprintf("%s/24", pipi.String())
+		goto try_again
 	}
 
 	res.asn = fmt.Sprintf("ASN_LOCAL_%v", ipnet)
