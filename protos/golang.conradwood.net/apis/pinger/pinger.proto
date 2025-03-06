@@ -167,4 +167,6 @@ service PingerList {
   rpc RemoveTag(RemoveTagRequest) returns (TagList);
   // get status matrix
   rpc GetStatusMatrix(common.Void) returns (StatusMatrixList);
+  // reset all pingstatus and config
+  rpc Reset(common.Void)returns(common.Void);
 }
