@@ -22,6 +22,13 @@ func find_source_ip_for_dest(host *netroutes.Host, to_ip string) string {
 		return ""
 	}
 
+	/* NAT:
+	   if host pings a public IPv4 we can return the ExternalIPv4
+	*/
+	if to_ver == 4 && (!to_is_private) && host.ExternalIPv4 != "" {
+		return host.ExternalIPv4
+	}
+
 	// try first with non /32
 	for _, host_ip := range host.IPs {
 		hostip_is_private, err := utils.IsPrivateIP(host_ip)
