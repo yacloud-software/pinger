@@ -21,14 +21,14 @@ func build_by_network_matrix(st []*pinger.PingStatus) (*pinger.StatusMatrix, err
 		}
 		vst = append(vst, ps)
 	}
-	fmt.Printf("   network matrix for %d pingstatus of which %d have netroutes\n", len(st), len(vst))
+	//	fmt.Printf("   network matrix for %d pingstatus of which %d have netroutes\n", len(st), len(vst))
 
 	res := &pinger.StatusMatrix{}
 	nl := &networklist{}
 	for _, ps := range vst {
 		nrc := ps.PingEntry.NetRouteConfig
 		route := nrc.Route
-		fmt.Printf("   Pingentry %s -> %s (%s)\n", ps.PingEntry.PingerID, ps.PingEntry.MetricHostName, ps.PingEntry.IP)
+		//fmt.Printf("   Pingentry %s -> %s (%s)\n", ps.PingEntry.PingerID, ps.PingEntry.MetricHostName, ps.PingEntry.IP)
 		for _, ip := range nrc.ToHost.IPs {
 			_, _, v, err := utils.ParseIP(ip)
 			if err != nil {

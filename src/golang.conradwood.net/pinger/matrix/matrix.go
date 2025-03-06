@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
 
 	"golang.conradwood.net/apis/pinger"
 	"golang.conradwood.net/go-easyops/utils"
@@ -31,6 +32,7 @@ func GetStatusMatrixList(ctx context.Context, st []*pinger.PingStatus) (*pinger.
 		&filter_def{name: "IPv4 private (by network)", version: 4, private: true},
 	}
 	for _, f := range filters {
+		started := time.Now()
 		matrix_name := f.name
 		fmt.Printf("Building network matrix \"%s\"\n", matrix_name)
 		nst := filter_status_by_filterdef(st, f)
@@ -40,6 +42,7 @@ func GetStatusMatrixList(ctx context.Context, st []*pinger.PingStatus) (*pinger.
 		}
 		stm.Name = matrix_name
 		res.Matrices = append(res.Matrices, stm)
+		fmt.Printf("Built network matrix \"%s\" in %0.1fs\n", matrix_name, time.Since(started).Seconds())
 	}
 
 	filters = []*filter_def{
@@ -48,6 +51,9 @@ func GetStatusMatrixList(ctx context.Context, st []*pinger.PingStatus) (*pinger.
 		&filter_def{name: "IPv4 private", version: 4, private: true},
 	}
 	for _, f := range filters {
+		started := time.Now()
+		fmt.Printf("Building network matrix \"%s\"\n", f.name)
+
 		nst := filter_status_by_filterdef(st, f)
 		stm, err := build_status_matrix(nst)
 		if err != nil {
@@ -55,6 +61,7 @@ func GetStatusMatrixList(ctx context.Context, st []*pinger.PingStatus) (*pinger.
 		}
 		stm.Name = f.name
 		res.Matrices = append(res.Matrices, stm)
+		fmt.Printf("Built network matrix \"%s\" in %0.1fs\n", f.name, time.Since(started).Seconds())
 	}
 
 	return res, nil

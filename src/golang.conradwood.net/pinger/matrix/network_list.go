@@ -4,12 +4,23 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"golang.conradwood.net/apis/geoip"
 	"golang.conradwood.net/apis/netroutes"
 	"golang.conradwood.net/go-easyops/authremote"
+	"golang.conradwood.net/go-easyops/cache"
 	"golang.conradwood.net/go-easyops/utils"
 )
+
+var (
+	geoip_cache = cache.New("geoip_cache", time.Duration(60)*time.Minute, 10000)
+)
+
+type geoip_cache_entry struct {
+	lr           *geoip.LookupResponse
+	last_updated time.Time
+}
 
 type networklist struct {
 	sync.Mutex
@@ -41,7 +52,7 @@ func (nl *networklist) AddIP(host *netroutes.Host, ip string) *networkdef {
 		return nd
 	}
 	ni := lookup_net_info(ip)
-	fmt.Printf("        Adding: %s  asn=\"%s\", isp=%s\n", ip, ni.asn, ni.isp)
+	//	fmt.Printf("        Adding: %s  asn=\"%s\", isp=%s\n", ip, ni.asn, ni.isp)
 	nd = &networkdef{asn: ni.asn}
 	nl.networks = append(nl.networks, nd)
 	return nd
@@ -121,11 +132,19 @@ func lookup_net_info(ip string) *netinfo {
 	if err == nil {
 		pips = fmt.Sprintf("%v", pip)
 	}
+	var lr *geoip.LookupResponse
+	key := pips
 
-	lr, err := geoip.GetGeoIPClient().Lookup(authremote.Context(), &geoip.LookupRequest{IP: pips})
-	if err != nil {
-		fmt.Printf("No geoip lookup (%s)", err)
-		return res
+	gce := geoip_cache.Get(key)
+	if gce != nil {
+		lr = gce.(*geoip_cache_entry).lr
+	} else {
+		lr, err = geoip.GetGeoIPClient().Lookup(authremote.Context(), &geoip.LookupRequest{IP: pips})
+		if err != nil {
+			fmt.Printf("No geoip lookup (%s)", err)
+			return res
+		}
+		geoip_cache.Put(key, &geoip_cache_entry{last_updated: time.Now(), lr: lr})
 	}
 
 	isp := lr.ISP
