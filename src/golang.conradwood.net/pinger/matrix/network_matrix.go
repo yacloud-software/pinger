@@ -92,7 +92,8 @@ func build_by_network_matrix(st []*pinger.PingStatus) (*pinger.StatusMatrix, err
 			mrow.Entries = append(mrow.Entries, me)
 		}
 	}
-
+	res.Failed = nl.Failures()
+	res.Working = nl.Successes()
 	return res, nil
 }
 

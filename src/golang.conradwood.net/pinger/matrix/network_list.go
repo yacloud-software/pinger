@@ -78,6 +78,24 @@ func (nl *networklist) getNetByIP(ip string) *networkdef {
 func (nl *networklist) GetNetworks() []*networkdef {
 	return nl.networks
 }
+func (nl *networklist) Failures() uint32 {
+	res := 0
+	for _, nd := range nl.networks {
+		for _, ndc := range nd.records {
+			res = res + ndc.failure_count
+		}
+	}
+	return uint32(res)
+}
+func (nl *networklist) Successes() uint32 {
+	res := 0
+	for _, nd := range nl.networks {
+		for _, ndc := range nd.records {
+			res = res + ndc.success_count
+		}
+	}
+	return uint32(res)
+}
 
 func (nl *networklist) Record(from_asn, to_asn string, success bool) {
 	if from_asn == to_asn {
