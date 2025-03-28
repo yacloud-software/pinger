@@ -114,7 +114,7 @@ func build_status_matrix(st []*pinger.PingStatus) (*pinger.StatusMatrix, error) 
 				row.Entries[col] = &pinger.MatrixEntry{Tested: false, DisplayName: "N/A" + s}
 			} else {
 				pme := &pinger.MatrixEntry{
-					Reachable:     pingstatus.Currently,
+					Reachable:     pingstatus.State5Min,
 					Tested:        true,
 					DisplayName:   "OK" + s,
 					DisplayColour: COLOUR_GOOD,

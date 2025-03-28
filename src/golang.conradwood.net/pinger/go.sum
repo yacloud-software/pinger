@@ -85,8 +85,8 @@ golang.conradwood.net/apis/autodeployer v1.1.3770 h1:CwDSFKK8yZJYj27XBlVM9bbaROx
 golang.conradwood.net/apis/autodeployer v1.1.3770/go.mod h1:N8uJP4ohRLn0bnJp8YE7ftYvwtU4z/DIVh5M/1qFMVo=
 golang.conradwood.net/apis/certmanager v1.1.3728 h1:1VpRufL0Jk2mmCyRqq3kUPHXKr+iOVjrWv/lBDuRZSA=
 golang.conradwood.net/apis/certmanager v1.1.3728/go.mod h1:ves+Pm8BRnfAwYweRoLVWpaX1cBANpiDZHKeMBRufLk=
-golang.conradwood.net/apis/common v1.1.3773 h1:8bGPTYLdM7p77CsL8MVIj+xPN5ASL45Et8HWCCC9uo0=
-golang.conradwood.net/apis/common v1.1.3773/go.mod h1:CBg94uqwM1QyCldans+WL8fsxVLBIzUSh/W6h8UqH8A=
+golang.conradwood.net/apis/common v1.1.3789 h1:KsJJFhtUJKkUSAy1N1xrniKJIrfvU0qk+eVCzUmNfdg=
+golang.conradwood.net/apis/common v1.1.3789/go.mod h1:Mwi5DZ/+N5IJYVgakS12/3rcM0gP11IrQsXDV2fPGq4=
 golang.conradwood.net/apis/deploymonkey v1.1.3770 h1:8yLT07Usz2wRxff0JaGm0XxLI9g4UzZbVtyy1TuBgrg=
 golang.conradwood.net/apis/deploymonkey v1.1.3770/go.mod h1:QqB2VyUJynLaIjrJLLY0uHi26aOEKPY49/ZLckD3Qfo=
 golang.conradwood.net/apis/errorlogger v1.1.3728 h1:hghjhnihHtwr+oURtvgzfbiMrIQzuXNuTW8poy36Sxk=
@@ -103,8 +103,8 @@ golang.conradwood.net/apis/grafanadata v1.1.3770 h1:bLA5UybAd3qad8EmXqTMaMyKlt0t
 golang.conradwood.net/apis/grafanadata v1.1.3770/go.mod h1:WKsIflrSM11MdHAko9W6Ex7/naQKVJd48hdehJhzMCQ=
 golang.conradwood.net/apis/h2gproxy v1.1.3728 h1:36wWQy6Smf4ZLRx1kPQMsAXZvfvWQrfq5eyG/IRZOaM=
 golang.conradwood.net/apis/h2gproxy v1.1.3728/go.mod h1:K5ULraeCBptiaeNcpmo3syHcQL6lhN1hOLaSAs8aH1o=
-golang.conradwood.net/apis/netroutes v1.1.3770 h1:F3Q0wjbx/eooJwWtD/Awki6oYCzB2qGrO0hfzhKvk58=
-golang.conradwood.net/apis/netroutes v1.1.3770/go.mod h1:DiDjT23LQvx58thou3BIMbdIcYSbTqjdxwS34LdGL0Q=
+golang.conradwood.net/apis/netroutes v1.1.3788 h1:IZZ2w4ES8seI2zEXujELMuDtgyuANuJCYT2Wn4BOJ1U=
+golang.conradwood.net/apis/netroutes v1.1.3788/go.mod h1:WBWYMC0R4yQncCg1+Okr0BxhY4lYfYfLP6VK2gQ4qCc=
 golang.conradwood.net/apis/objectstore v1.1.3770 h1:b9WonZC9kJR81J0yiwFPEbU9Azs4s/flFMUcxvKWYrk=
 golang.conradwood.net/apis/objectstore v1.1.3770/go.mod h1:YPUtFs8wfnP5jUNmMRj94ltVt2/SSO8+WESjlZ2msRc=
 golang.conradwood.net/apis/registry v1.1.3770 h1:QUdxHfRX7dq1C/ChAdL4wlPyRMGh+UZYaHQQcZ7bB0U=

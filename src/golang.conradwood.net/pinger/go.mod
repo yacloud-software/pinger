@@ -7,9 +7,9 @@ toolchain go1.23.3
 require (
 	github.com/go-ping/ping v1.2.0
 	github.com/goccy/go-graphviz v0.2.9
-	golang.conradwood.net/apis/common v1.1.3773
+	golang.conradwood.net/apis/common v1.1.3789
 	golang.conradwood.net/apis/geoip v1.1.3739
-	golang.conradwood.net/apis/netroutes v1.1.3770
+	golang.conradwood.net/apis/netroutes v1.1.3788
 	golang.conradwood.net/apis/pinger v1.1.1697
 	golang.conradwood.net/go-easyops v0.1.34924
 	golang.singingcat.net/scgolib v0.1.34525

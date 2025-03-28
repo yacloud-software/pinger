@@ -94,12 +94,19 @@ func get_status_as_proto(ctx context.Context) []*pb.PingStatus {
 			Currently: st.state,
 			Since:     uint32(st.since.Unix()),
 		}
+		// set the 5minute state
+		b := true
+		if (!st.state) && time.Since(st.since) >= time.Duration(5)*time.Minute {
+			b = false
+		}
+		ps.State5Min = b
 		if pe.IP == "" {
 			pe.IP, err = dc.Get(pe.MetricHostName, pe.IPVersion)
 			if err != nil {
 				fmt.Printf("status entryid #%d: Failed to resolve: %s\n", pe.ID, err)
 			}
 		}
+
 		res = append(res, ps)
 	}
 	return res

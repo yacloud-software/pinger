@@ -60,7 +60,7 @@ func build_by_network_matrix(st []*pinger.PingStatus) (*pinger.StatusMatrix, err
 		if to_net_info.asn == "" {
 			fmt.Printf("no to-net info for ip \"%s\"\n", to_ip)
 		}
-		nl.Record(from_net_info.asn, to_net_info.asn, ps.Currently)
+		nl.Record(from_net_info.asn, to_net_info.asn, ps.State5Min)
 	}
 
 	m := &amatrix{}
