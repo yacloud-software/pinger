@@ -62,6 +62,7 @@ message PingStatus {
   uint32 Since=4;
   uint32 LastOnline=5;
   uint32 LastOffline=6;
+  bool State5Min=7; // state over 5  minutes
 }
 message PingStatusList {
   repeated PingStatus Status=1;
