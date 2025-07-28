@@ -194,7 +194,7 @@ try_again:
 		goto try_again
 	}
 	pnet, _ := ipnet.Mask.Size()
-	fmt.Printf("NET: %d\n", pnet)
+	//	fmt.Printf("NET: %d\n", pnet)
 	if pnet == 32 {
 		ip = fmt.Sprintf("%s/24", pipi.String())
 		goto try_again
