@@ -30,6 +30,7 @@ type echoServer struct {
 
 func main() {
 	flag.Parse()
+   server.SetHealth(common.Health_STARTING)
 	fmt.Printf("Starting PingerServer...\n")
 
 	gn = goodness.NewGoodness("ping")
@@ -38,6 +39,7 @@ func main() {
 	sd := server.NewServerDef()
 	sd.AddTag("pinger", *pingerid)
 	sd.SetPort(*port)
+sd.SetOnStartupCallback(startup)
 	sd.SetRegister(server.Register(
 		func(server *grpc.Server) error {
 			e := new(echoServer)
@@ -48,6 +50,9 @@ func main() {
 	err := server.ServerStartup(sd)
 	utils.Bail("Unable to start server", err)
 	os.Exit(0)
+}
+func startup() {
+	server.SetHealth(common.Health_READY)
 }
 
 /************************************
@@ -199,3 +204,6 @@ func debugf(format string, args ...interface{}) {
 	}
 	fmt.Printf(format, args...)
 }
+
+
+
