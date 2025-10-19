@@ -1,19 +1,17 @@
 module golang.conradwood.net/pinger
 
-go 1.23.0
-
-toolchain go1.23.3
+go 1.24.0
 
 require (
 	github.com/go-ping/ping v1.2.0
 	github.com/goccy/go-graphviz v0.2.9
-	golang.conradwood.net/apis/common v1.1.4067
+	golang.conradwood.net/apis/common v1.1.4116
 	golang.conradwood.net/apis/geoip v1.1.4001
 	golang.conradwood.net/apis/netroutes v1.1.4001
 	golang.conradwood.net/apis/pinger v1.1.1697
-	golang.conradwood.net/go-easyops v0.1.37697
+	golang.conradwood.net/go-easyops v0.1.38116
 	golang.singingcat.net/scgolib v0.1.36552
-	google.golang.org/grpc v1.75.0
+	google.golang.org/grpc v1.75.1
 )
 
 require (
@@ -36,35 +34,35 @@ require (
 	github.com/prometheus/common v0.65.0 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/tetratelabs/wazero v1.9.0 // indirect
-	golang.conradwood.net/apis/auth v1.1.4067 // indirect
+	golang.conradwood.net/apis/auth v1.1.4116 // indirect
 	golang.conradwood.net/apis/autodeployer v1.1.4021 // indirect
 	golang.conradwood.net/apis/certmanager v1.1.4021 // indirect
 	golang.conradwood.net/apis/deploymonkey v1.1.4021 // indirect
 	golang.conradwood.net/apis/errorlogger v1.1.4021 // indirect
 	golang.conradwood.net/apis/framework v1.1.4021 // indirect
 	golang.conradwood.net/apis/getestservice v1.1.4021 // indirect
-	golang.conradwood.net/apis/goeasyops v1.1.4067 // indirect
+	golang.conradwood.net/apis/goeasyops v1.1.4116 // indirect
 	golang.conradwood.net/apis/grafanadata v1.1.4021 // indirect
 	golang.conradwood.net/apis/h2gproxy v1.1.4021 // indirect
 	golang.conradwood.net/apis/objectstore v1.1.4021 // indirect
 	golang.conradwood.net/apis/registry v1.1.4021 // indirect
 	golang.org/x/image v0.29.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	golang.singingcat.net/apis/base v1.1.4001 // indirect
 	golang.singingcat.net/apis/scweb v1.1.4001 // indirect
 	golang.singingcat.net/apis/singingcat v1.1.4001 // indirect
 	golang.yacloud.eu/apis/autodeployer2 v1.1.4021 // indirect
 	golang.yacloud.eu/apis/faultindicator v1.1.4021 // indirect
 	golang.yacloud.eu/apis/fscache v1.1.4021 // indirect
-	golang.yacloud.eu/apis/session v1.1.4067 // indirect
+	golang.yacloud.eu/apis/session v1.1.4116 // indirect
 	golang.yacloud.eu/apis/unixipc v1.1.4021 // indirect
 	golang.yacloud.eu/apis/urlcacher v1.1.4021 // indirect
 	golang.yacloud.eu/unixipc v0.1.31725 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
-	google.golang.org/protobuf v1.36.8 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
