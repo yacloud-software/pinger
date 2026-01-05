@@ -157,7 +157,6 @@ func pinger_list_update() {
 		t := &utils.Table{}
 		t.AddHeaders("host", "ip", "active", "alarm")
 		for _, p := range pl.Entries {
-			fmt.Printf("Entry: %v\n", p)
 			t.AddString(p.MetricHostName)
 			t.AddString(p.IP)
 			t.AddBool(p.IsActive)
