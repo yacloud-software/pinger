@@ -53,6 +53,12 @@ type DBIP struct {
 	lock                 sync.Mutex
 }
 
+func init() {
+	RegisterDBHandlerFactory(func() Handler {
+		return DefaultDBIP()
+	})
+}
+
 func DefaultDBIP() *DBIP {
 	if default_def_DBIP != nil {
 		return default_def_DBIP
@@ -190,6 +196,14 @@ func (a *DBIP) saveMap(ctx context.Context, queryname string, smap map[string]in
 	return id, nil
 }
 
+// if ID==0 save, otherwise update
+func (a *DBIP) SaveOrUpdate(ctx context.Context, p *savepb.IP) error {
+	if p.ID == 0 {
+		_, err := a.Save(ctx, p)
+		return err
+	}
+	return a.Update(ctx, p)
+}
 func (a *DBIP) Update(ctx context.Context, p *savepb.IP) error {
 	qn := "DBIP_Update"
 	_, e := a.DB.ExecContext(ctx, qn, "update "+a.SQLTablename+" set ipversion=$1, name=$2, ip=$3, host=$4 where id = $5", a.get_IPVersion(p), a.get_Name(p), a.get_IP(p), a.get_Host_ID(p), p.ID)
@@ -425,8 +439,11 @@ func (a *DBIP) ByDBQuery(ctx context.Context, query *Query) ([]*savepb.IP, error
 	i := 0
 	for col_name, value := range extra_fields {
 		i++
-		efname := fmt.Sprintf("EXTRA_FIELD_%d", i)
-		query.Add(col_name+" = "+efname, QP{efname: value})
+		/*
+		   efname:=fmt.Sprintf("EXTRA_FIELD_%d",i)
+		   query.Add(col_name+" = "+efname,QP{efname:value})
+		*/
+		query.AddEqual(col_name, value)
 	}
 
 	gw, paras := query.ToPostgres()

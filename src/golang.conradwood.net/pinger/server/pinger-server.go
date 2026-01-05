@@ -36,20 +36,17 @@ type echoServer struct {
 
 func main() {
 	flag.Parse()
-   server.SetHealth(common.Health_STARTING)
+	server.SetHealth(common.Health_STARTING)
 	fmt.Printf("Starting PingerServer...\n")
 	var err error
 	//	psql, err = sql.Open()
 	utils.Bail("failed to open psql", err)
+	db.CreateAllTables(context.Background())
 	pedb = db.DefaultDBPingEntry()
-	db.DefaultDBHost()
-	db.DefaultDBIP()
-	db.DefaultDBRoute()
-	db.DefaultDBTag()
 	gn = goodness.NewGoodness("ping")
 	sd := server.NewServerDef()
 	sd.SetPort(*port)
-sd.SetOnStartupCallback(startup)
+	sd.SetOnStartupCallback(startup)
 	sd.SetRegister(server.Register(
 		func(server *grpc.Server) error {
 			e := new(echoServer)
@@ -76,7 +73,7 @@ func (e *echoServer) GetPingList(ctx context.Context, req *pb.PingListRequest) (
 	if req.PingerID == "" {
 		return nil, errors.InvalidArgs(ctx, "invalid pingerid", "invalid pingerid")
 	}
-	ape, err := pedb.ByPingerID(ctx, req.PingerID)
+	ape, err := db.DefaultDBPingEntry().ByPingerID(ctx, req.PingerID)
 	if err != nil {
 		return nil, err
 	}
@@ -87,6 +84,9 @@ func (e *echoServer) GetPingList(ctx context.Context, req *pb.PingListRequest) (
 		fmt.Printf("failed to get netroutes for \"%s\"\n", err)
 	}
 	for _, e := range ape {
+		if !in_network_status(e) {
+			continue
+		}
 		if e.IsActive == false {
 			continue
 		}
@@ -162,6 +162,3 @@ func find_entry(entries []*pinger.PingEntry, e *pinger.PingEntry) *pinger.PingEn
 	}
 	return nil
 }
-
-
-

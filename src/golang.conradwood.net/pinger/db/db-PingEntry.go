@@ -16,7 +16,7 @@ package db
 
 Main Table:
 
- CREATE TABLE pingentry (id integer primary key default nextval('pingentry_seq'),ip text not null  ,interval integer not null  ,metrichostname text not null  ,pingerid text not null  ,label text not null  ,ipversion integer not null  ,isactive boolean not null  ,label2 text not null  ,label3 text not null  ,label4 text not null  );
+ CREATE TABLE pingentry (id integer primary key default nextval('pingentry_seq'),ip text not null  ,interval integer not null  ,metrichostname text not null  ,pingerid text not null  ,label text not null  ,ipversion integer not null  ,isactive boolean not null  ,label2 text not null  ,label3 text not null  ,label4 text not null  ,offline_netstatus_alarm boolean not null  );
 
 Alter statements:
 ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS ip text not null default '';
@@ -29,11 +29,12 @@ ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS isactive boolean not null default
 ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS label2 text not null default '';
 ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS label3 text not null default '';
 ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS label4 text not null default '';
+ALTER TABLE pingentry ADD COLUMN IF NOT EXISTS offline_netstatus_alarm boolean not null default false;
 
 
 Archive Table: (structs can be moved from main to archive using Archive() function)
 
- CREATE TABLE pingentry_archive (id integer unique not null,ip text not null,interval integer not null,metrichostname text not null,pingerid text not null,label text not null,ipversion integer not null,isactive boolean not null,label2 text not null,label3 text not null,label4 text not null);
+ CREATE TABLE pingentry_archive (id integer unique not null,ip text not null,interval integer not null,metrichostname text not null,pingerid text not null,label text not null,ipversion integer not null,isactive boolean not null,label2 text not null,label3 text not null,label4 text not null,offline_netstatus_alarm boolean not null);
 */
 
 import (
@@ -57,6 +58,12 @@ type DBPingEntry struct {
 	SQLArchivetablename  string
 	customColumnHandlers []CustomColumnHandler
 	lock                 sync.Mutex
+}
+
+func init() {
+	RegisterDBHandlerFactory(func() Handler {
+		return DefaultDBPingEntry()
+	})
 }
 
 func DefaultDBPingEntry() *DBPingEntry {
@@ -108,7 +115,7 @@ func (a *DBPingEntry) Archive(ctx context.Context, id uint64) error {
 	}
 
 	// now save it to archive:
-	_, e := a.DB.ExecContext(ctx, "archive_DBPingEntry", "insert into "+a.SQLArchivetablename+" (id,ip, interval, metrichostname, pingerid, label, ipversion, isactive, label2, label3, label4) values ($1,$2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ", p.ID, p.IP, p.Interval, p.MetricHostName, p.PingerID, p.Label, p.IPVersion, p.IsActive, p.Label2, p.Label3, p.Label4)
+	_, e := a.DB.ExecContext(ctx, "archive_DBPingEntry", "insert into "+a.SQLArchivetablename+" (id,ip, interval, metrichostname, pingerid, label, ipversion, isactive, label2, label3, label4, offline_netstatus_alarm) values ($1,$2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ", p.ID, p.IP, p.Interval, p.MetricHostName, p.PingerID, p.Label, p.IPVersion, p.IsActive, p.Label2, p.Label3, p.Label4, p.Offline_NetStatus_Alarm)
 	if e != nil {
 		return e
 	}
@@ -136,6 +143,7 @@ func (a *DBPingEntry) buildSaveMap(ctx context.Context, p *savepb.PingEntry) (ma
 	res["label2"] = a.get_col_from_proto(p, "label2")
 	res["label3"] = a.get_col_from_proto(p, "label3")
 	res["label4"] = a.get_col_from_proto(p, "label4")
+	res["offline_netstatus_alarm"] = a.get_col_from_proto(p, "offline_netstatus_alarm")
 	if extra != nil {
 		for k, v := range extra {
 			res[k] = v
@@ -202,9 +210,17 @@ func (a *DBPingEntry) saveMap(ctx context.Context, queryname string, smap map[st
 	return id, nil
 }
 
+// if ID==0 save, otherwise update
+func (a *DBPingEntry) SaveOrUpdate(ctx context.Context, p *savepb.PingEntry) error {
+	if p.ID == 0 {
+		_, err := a.Save(ctx, p)
+		return err
+	}
+	return a.Update(ctx, p)
+}
 func (a *DBPingEntry) Update(ctx context.Context, p *savepb.PingEntry) error {
 	qn := "DBPingEntry_Update"
-	_, e := a.DB.ExecContext(ctx, qn, "update "+a.SQLTablename+" set ip=$1, interval=$2, metrichostname=$3, pingerid=$4, label=$5, ipversion=$6, isactive=$7, label2=$8, label3=$9, label4=$10 where id = $11", a.get_IP(p), a.get_Interval(p), a.get_MetricHostName(p), a.get_PingerID(p), a.get_Label(p), a.get_IPVersion(p), a.get_IsActive(p), a.get_Label2(p), a.get_Label3(p), a.get_Label4(p), p.ID)
+	_, e := a.DB.ExecContext(ctx, qn, "update "+a.SQLTablename+" set ip=$1, interval=$2, metrichostname=$3, pingerid=$4, label=$5, ipversion=$6, isactive=$7, label2=$8, label3=$9, label4=$10, offline_netstatus_alarm=$11 where id = $12", a.get_IP(p), a.get_Interval(p), a.get_MetricHostName(p), a.get_PingerID(p), a.get_Label(p), a.get_IPVersion(p), a.get_IsActive(p), a.get_Label2(p), a.get_Label3(p), a.get_Label4(p), a.get_Offline_NetStatus_Alarm(p), p.ID)
 
 	return a.Error(ctx, qn, e)
 }
@@ -572,6 +588,36 @@ func (a *DBPingEntry) ByLikeLabel4(ctx context.Context, p string) ([]*savepb.Pin
 	return l, nil
 }
 
+// get all "DBPingEntry" rows with matching Offline_NetStatus_Alarm
+func (a *DBPingEntry) ByOffline_NetStatus_Alarm(ctx context.Context, p bool) ([]*savepb.PingEntry, error) {
+	qn := "DBPingEntry_ByOffline_NetStatus_Alarm"
+	l, e := a.fromQuery(ctx, qn, "offline_netstatus_alarm = $1", p)
+	if e != nil {
+		return nil, a.Error(ctx, qn, errors.Errorf("ByOffline_NetStatus_Alarm: error scanning (%s)", e))
+	}
+	return l, nil
+}
+
+// get all "DBPingEntry" rows with multiple matching Offline_NetStatus_Alarm
+func (a *DBPingEntry) ByMultiOffline_NetStatus_Alarm(ctx context.Context, p []bool) ([]*savepb.PingEntry, error) {
+	qn := "DBPingEntry_ByOffline_NetStatus_Alarm"
+	l, e := a.fromQuery(ctx, qn, "offline_netstatus_alarm in $1", p)
+	if e != nil {
+		return nil, a.Error(ctx, qn, errors.Errorf("ByOffline_NetStatus_Alarm: error scanning (%s)", e))
+	}
+	return l, nil
+}
+
+// the 'like' lookup
+func (a *DBPingEntry) ByLikeOffline_NetStatus_Alarm(ctx context.Context, p bool) ([]*savepb.PingEntry, error) {
+	qn := "DBPingEntry_ByLikeOffline_NetStatus_Alarm"
+	l, e := a.fromQuery(ctx, qn, "offline_netstatus_alarm ilike $1", p)
+	if e != nil {
+		return nil, a.Error(ctx, qn, errors.Errorf("ByOffline_NetStatus_Alarm: error scanning (%s)", e))
+	}
+	return l, nil
+}
+
 /**********************************************************************
 * The field getters
 **********************************************************************/
@@ -631,6 +677,11 @@ func (a *DBPingEntry) get_Label4(p *savepb.PingEntry) string {
 	return string(p.Label4)
 }
 
+// getter for field "Offline_NetStatus_Alarm" (Offline_NetStatus_Alarm) [bool]
+func (a *DBPingEntry) get_Offline_NetStatus_Alarm(p *savepb.PingEntry) bool {
+	return bool(p.Offline_NetStatus_Alarm)
+}
+
 /**********************************************************************
 * Helper to convert from an SQL Query
 **********************************************************************/
@@ -644,8 +695,11 @@ func (a *DBPingEntry) ByDBQuery(ctx context.Context, query *Query) ([]*savepb.Pi
 	i := 0
 	for col_name, value := range extra_fields {
 		i++
-		efname := fmt.Sprintf("EXTRA_FIELD_%d", i)
-		query.Add(col_name+" = "+efname, QP{efname: value})
+		/*
+		   efname:=fmt.Sprintf("EXTRA_FIELD_%d",i)
+		   query.Add(col_name+" = "+efname,QP{efname:value})
+		*/
+		query.AddEqual(col_name, value)
 	}
 
 	gw, paras := query.ToPostgres()
@@ -725,6 +779,8 @@ func (a *DBPingEntry) get_col_from_proto(p *savepb.PingEntry, colname string) in
 		return a.get_Label3(p)
 	} else if colname == "label4" {
 		return a.get_Label4(p)
+	} else if colname == "offline_netstatus_alarm" {
+		return a.get_Offline_NetStatus_Alarm(p)
 	}
 	panic(fmt.Sprintf("in table \"%s\", column \"%s\" cannot be resolved to proto field name", a.Tablename(), colname))
 }
@@ -734,10 +790,10 @@ func (a *DBPingEntry) Tablename() string {
 }
 
 func (a *DBPingEntry) SelectCols() string {
-	return "id,ip, interval, metrichostname, pingerid, label, ipversion, isactive, label2, label3, label4"
+	return "id,ip, interval, metrichostname, pingerid, label, ipversion, isactive, label2, label3, label4, offline_netstatus_alarm"
 }
 func (a *DBPingEntry) SelectColsQualified() string {
-	return "" + a.SQLTablename + ".id," + a.SQLTablename + ".ip, " + a.SQLTablename + ".interval, " + a.SQLTablename + ".metrichostname, " + a.SQLTablename + ".pingerid, " + a.SQLTablename + ".label, " + a.SQLTablename + ".ipversion, " + a.SQLTablename + ".isactive, " + a.SQLTablename + ".label2, " + a.SQLTablename + ".label3, " + a.SQLTablename + ".label4"
+	return "" + a.SQLTablename + ".id," + a.SQLTablename + ".ip, " + a.SQLTablename + ".interval, " + a.SQLTablename + ".metrichostname, " + a.SQLTablename + ".pingerid, " + a.SQLTablename + ".label, " + a.SQLTablename + ".ipversion, " + a.SQLTablename + ".isactive, " + a.SQLTablename + ".label2, " + a.SQLTablename + ".label3, " + a.SQLTablename + ".label4, " + a.SQLTablename + ".offline_netstatus_alarm"
 }
 
 func (a *DBPingEntry) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb.PingEntry, error) {
@@ -758,7 +814,8 @@ func (a *DBPingEntry) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb
 		scanTarget_8 := &foo.Label2
 		scanTarget_9 := &foo.Label3
 		scanTarget_10 := &foo.Label4
-		err := rows.Scan(scanTarget_0, scanTarget_1, scanTarget_2, scanTarget_3, scanTarget_4, scanTarget_5, scanTarget_6, scanTarget_7, scanTarget_8, scanTarget_9, scanTarget_10)
+		scanTarget_11 := &foo.Offline_NetStatus_Alarm
+		err := rows.Scan(scanTarget_0, scanTarget_1, scanTarget_2, scanTarget_3, scanTarget_4, scanTarget_5, scanTarget_6, scanTarget_7, scanTarget_8, scanTarget_9, scanTarget_10, scanTarget_11)
 		// END SCANNER
 
 		if err != nil {
@@ -775,8 +832,8 @@ func (a *DBPingEntry) FromRows(ctx context.Context, rows *gosql.Rows) ([]*savepb
 func (a *DBPingEntry) CreateTable(ctx context.Context) error {
 	csql := []string{
 		`create sequence if not exists ` + a.SQLTablename + `_seq;`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null ,interval integer not null ,metrichostname text not null ,pingerid text not null ,label text not null ,ipversion integer not null ,isactive boolean not null ,label2 text not null ,label3 text not null ,label4 text not null );`,
-		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null ,interval integer not null ,metrichostname text not null ,pingerid text not null ,label text not null ,ipversion integer not null ,isactive boolean not null ,label2 text not null ,label3 text not null ,label4 text not null );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + ` (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null ,interval integer not null ,metrichostname text not null ,pingerid text not null ,label text not null ,ipversion integer not null ,isactive boolean not null ,label2 text not null ,label3 text not null ,label4 text not null ,offline_netstatus_alarm boolean not null );`,
+		`CREATE TABLE if not exists ` + a.SQLTablename + `_archive (id integer primary key default nextval('` + a.SQLTablename + `_seq'),ip text not null ,interval integer not null ,metrichostname text not null ,pingerid text not null ,label text not null ,ipversion integer not null ,isactive boolean not null ,label2 text not null ,label3 text not null ,label4 text not null ,offline_netstatus_alarm boolean not null );`,
 		`ALTER TABLE ` + a.SQLTablename + ` ADD COLUMN IF NOT EXISTS ip text not null default '';`,
 		`ALTER TABLE ` + a.SQLTablename + ` ADD COLUMN IF NOT EXISTS interval integer not null default 0;`,
 		`ALTER TABLE ` + a.SQLTablename + ` ADD COLUMN IF NOT EXISTS metrichostname text not null default '';`,
@@ -787,6 +844,7 @@ func (a *DBPingEntry) CreateTable(ctx context.Context) error {
 		`ALTER TABLE ` + a.SQLTablename + ` ADD COLUMN IF NOT EXISTS label2 text not null default '';`,
 		`ALTER TABLE ` + a.SQLTablename + ` ADD COLUMN IF NOT EXISTS label3 text not null default '';`,
 		`ALTER TABLE ` + a.SQLTablename + ` ADD COLUMN IF NOT EXISTS label4 text not null default '';`,
+		`ALTER TABLE ` + a.SQLTablename + ` ADD COLUMN IF NOT EXISTS offline_netstatus_alarm boolean not null default false;`,
 
 		`ALTER TABLE ` + a.SQLTablename + `_archive  ADD COLUMN IF NOT EXISTS ip text not null  default '';`,
 		`ALTER TABLE ` + a.SQLTablename + `_archive  ADD COLUMN IF NOT EXISTS interval integer not null  default 0;`,
@@ -798,6 +856,7 @@ func (a *DBPingEntry) CreateTable(ctx context.Context) error {
 		`ALTER TABLE ` + a.SQLTablename + `_archive  ADD COLUMN IF NOT EXISTS label2 text not null  default '';`,
 		`ALTER TABLE ` + a.SQLTablename + `_archive  ADD COLUMN IF NOT EXISTS label3 text not null  default '';`,
 		`ALTER TABLE ` + a.SQLTablename + `_archive  ADD COLUMN IF NOT EXISTS label4 text not null  default '';`,
+		`ALTER TABLE ` + a.SQLTablename + `_archive  ADD COLUMN IF NOT EXISTS offline_netstatus_alarm boolean not null  default false;`,
 	}
 
 	for i, c := range csql {

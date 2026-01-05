@@ -50,6 +50,12 @@ type DBTag struct {
 	lock                 sync.Mutex
 }
 
+func init() {
+	RegisterDBHandlerFactory(func() Handler {
+		return DefaultDBTag()
+	})
+}
+
 func DefaultDBTag() *DBTag {
 	if default_def_DBTag != nil {
 		return default_def_DBTag
@@ -184,6 +190,14 @@ func (a *DBTag) saveMap(ctx context.Context, queryname string, smap map[string]i
 	return id, nil
 }
 
+// if ID==0 save, otherwise update
+func (a *DBTag) SaveOrUpdate(ctx context.Context, p *savepb.Tag) error {
+	if p.ID == 0 {
+		_, err := a.Save(ctx, p)
+		return err
+	}
+	return a.Update(ctx, p)
+}
 func (a *DBTag) Update(ctx context.Context, p *savepb.Tag) error {
 	qn := "DBTag_Update"
 	_, e := a.DB.ExecContext(ctx, qn, "update "+a.SQLTablename+" set tagname=$1 where id = $2", a.get_TagName(p), p.ID)
@@ -311,8 +325,11 @@ func (a *DBTag) ByDBQuery(ctx context.Context, query *Query) ([]*savepb.Tag, err
 	i := 0
 	for col_name, value := range extra_fields {
 		i++
-		efname := fmt.Sprintf("EXTRA_FIELD_%d", i)
-		query.Add(col_name+" = "+efname, QP{efname: value})
+		/*
+		   efname:=fmt.Sprintf("EXTRA_FIELD_%d",i)
+		   query.Add(col_name+" = "+efname,QP{efname:value})
+		*/
+		query.AddEqual(col_name, value)
 	}
 
 	gw, paras := query.ToPostgres()

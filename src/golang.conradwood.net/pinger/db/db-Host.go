@@ -51,6 +51,12 @@ type DBHost struct {
 	lock                 sync.Mutex
 }
 
+func init() {
+	RegisterDBHandlerFactory(func() Handler {
+		return DefaultDBHost()
+	})
+}
+
 func DefaultDBHost() *DBHost {
 	if default_def_DBHost != nil {
 		return default_def_DBHost
@@ -186,6 +192,14 @@ func (a *DBHost) saveMap(ctx context.Context, queryname string, smap map[string]
 	return id, nil
 }
 
+// if ID==0 save, otherwise update
+func (a *DBHost) SaveOrUpdate(ctx context.Context, p *savepb.Host) error {
+	if p.ID == 0 {
+		_, err := a.Save(ctx, p)
+		return err
+	}
+	return a.Update(ctx, p)
+}
 func (a *DBHost) Update(ctx context.Context, p *savepb.Host) error {
 	qn := "DBHost_Update"
 	_, e := a.DB.ExecContext(ctx, qn, "update "+a.SQLTablename+" set name=$1, pingerid=$2 where id = $3", a.get_Name(p), a.get_PingerID(p), p.ID)
@@ -348,8 +362,11 @@ func (a *DBHost) ByDBQuery(ctx context.Context, query *Query) ([]*savepb.Host, e
 	i := 0
 	for col_name, value := range extra_fields {
 		i++
-		efname := fmt.Sprintf("EXTRA_FIELD_%d", i)
-		query.Add(col_name+" = "+efname, QP{efname: value})
+		/*
+		   efname:=fmt.Sprintf("EXTRA_FIELD_%d",i)
+		   query.Add(col_name+" = "+efname,QP{efname:value})
+		*/
+		query.AddEqual(col_name, value)
 	}
 
 	gw, paras := query.ToPostgres()

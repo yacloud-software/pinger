@@ -51,6 +51,12 @@ type DBRoute struct {
 	lock                 sync.Mutex
 }
 
+func init() {
+	RegisterDBHandlerFactory(func() Handler {
+		return DefaultDBRoute()
+	})
+}
+
 func DefaultDBRoute() *DBRoute {
 	if default_def_DBRoute != nil {
 		return default_def_DBRoute
@@ -186,6 +192,14 @@ func (a *DBRoute) saveMap(ctx context.Context, queryname string, smap map[string
 	return id, nil
 }
 
+// if ID==0 save, otherwise update
+func (a *DBRoute) SaveOrUpdate(ctx context.Context, p *savepb.Route) error {
+	if p.ID == 0 {
+		_, err := a.Save(ctx, p)
+		return err
+	}
+	return a.Update(ctx, p)
+}
 func (a *DBRoute) Update(ctx context.Context, p *savepb.Route) error {
 	qn := "DBRoute_Update"
 	_, e := a.DB.ExecContext(ctx, qn, "update "+a.SQLTablename+" set sourceip=$1, destip=$2 where id = $3", a.get_SourceIP_ID(p), a.get_DestIP_ID(p), p.ID)
@@ -354,8 +368,11 @@ func (a *DBRoute) ByDBQuery(ctx context.Context, query *Query) ([]*savepb.Route,
 	i := 0
 	for col_name, value := range extra_fields {
 		i++
-		efname := fmt.Sprintf("EXTRA_FIELD_%d", i)
-		query.Add(col_name+" = "+efname, QP{efname: value})
+		/*
+		   efname:=fmt.Sprintf("EXTRA_FIELD_%d",i)
+		   query.Add(col_name+" = "+efname,QP{efname:value})
+		*/
+		query.AddEqual(col_name, value)
 	}
 
 	gw, paras := query.ToPostgres()
