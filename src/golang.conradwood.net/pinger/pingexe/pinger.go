@@ -30,7 +30,7 @@ type echoServer struct {
 
 func main() {
 	flag.Parse()
-   server.SetHealth(common.Health_STARTING)
+	server.SetHealth(common.Health_STARTING)
 	fmt.Printf("Starting PingerServer...\n")
 
 	gn = goodness.NewGoodness("ping")
@@ -39,7 +39,7 @@ func main() {
 	sd := server.NewServerDef()
 	sd.AddTag("pinger", *pingerid)
 	sd.SetPort(*port)
-sd.SetOnStartupCallback(startup)
+	sd.SetOnStartupCallback(startup)
 	sd.SetRegister(server.Register(
 		func(server *grpc.Server) error {
 			e := new(echoServer)
@@ -153,7 +153,20 @@ func pinger_list_update() {
 		}
 		res.Entries = append(res.Entries, e)
 	}
+	if pinglist == nil {
+		t := &utils.Table{}
+		t.AddHeaders("host", "ip", "active", "alarm")
+		for _, p := range pl.Entries {
+			fmt.Printf("Entry: %v\n", p)
+			t.AddString(p.MetricHostName)
+			t.AddString(p.IP)
+			t.AddBool(p.IsActive)
+			t.AddBool(p.Offline_NetStatus_Alarm)
+			t.NewRow()
 
+		}
+		fmt.Println(t.ToPrettyString())
+	}
 	pinglist = res
 }
 
@@ -204,6 +217,3 @@ func debugf(format string, args ...interface{}) {
 	}
 	fmt.Printf(format, args...)
 }
-
-
-
