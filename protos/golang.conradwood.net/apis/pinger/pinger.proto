@@ -36,6 +36,7 @@ message PingEntry {
   string Label3=10; // optional filtering default: ""
   string Label4=11; // optional filtering default: ""
   NetRouteConfig NetRouteConfig=12;
+  bool Offline_NetStatus_Alarm=13;
 }
 message NetRouteConfig {
   netroutes.Route Route=1;
