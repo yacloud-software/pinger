@@ -54,9 +54,13 @@ func get_status_tracker(ID uint64, pingerid string) *status {
 	res, found := status_trackers[ID]
 	if found {
 		if res.pe.ID != pe.ID {
+			fmt.Printf("In status: %d,%s\n", res.pe.ID, res.pingerid)
+			fmt.Printf("In submit: %d,%s\n", ID, pingerid)
 			panic("mismatched pingentry id")
 		}
 		if res.pingerid != pingerid {
+			fmt.Printf("In status: %d,%s\n", res.pe.ID, res.pingerid)
+			fmt.Printf("In submit: %d,%s\n", ID, pingerid)
 			panic("mismatched pingerid")
 		}
 		return res
