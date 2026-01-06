@@ -23,21 +23,41 @@ var (
 )
 
 type status struct {
-	ID           uint64
-	state        bool
-	since        time.Time
-	pingerid     string
-	last_updated time.Time // eventually they become stale and are removed
-	pe           *pb.PingEntry
+	ID                   uint64
+	state                bool
+	since                time.Time
+	pingerid             string
+	last_updated         time.Time // eventually they become stale and are removed
+	pe                   *pb.PingEntry
+	temporarily_excluded bool // e.g. if alarm is active and this is not available when house is in alarm mode
 }
 
 func init() {
 	prometheus.MustRegister(pingStatusGauge)
+	go status_network_loop()
 }
 func reset_status_trackers() {
 	stlock.Lock()
 	status_trackers = make(map[string]*status)
 	stlock.Unlock()
+}
+func status_network_loop() {
+	for {
+		t := time.Duration(1) * time.Minute
+		time.Sleep(t)
+		stlock.Lock()
+		var sts []*status
+		for _, st := range status_trackers {
+			sts = append(sts, st)
+		}
+		stlock.Unlock()
+		for _, st := range sts {
+			if in_network_status(st.pe) {
+				continue
+			}
+			st.Set(false)
+		}
+	}
 }
 func get_status_tracker(ID uint64, pingerid string) *status {
 	key := fmt.Sprintf("%d_%s", ID, pingerid)
@@ -89,6 +109,9 @@ func (s *status) Set(b bool) {
 	}
 	if !in_network_status(s.pe) {
 		val = 3
+		s.temporarily_excluded = true
+	} else {
+		s.temporarily_excluded = false
 	}
 	pingStatusGauge.With(l).Set(float64(val))
 
@@ -139,6 +162,9 @@ func get_status_as_proto(ctx context.Context) []*pb.PingStatus {
 	var res []*pb.PingStatus
 	var err error
 	for _, st := range sts {
+		if st.temporarily_excluded {
+			continue
+		}
 		pe := GetPingEntryRouteByID(st.ID)
 		if pe == nil {
 			pe, err = get_ping_entry_by_id(ctx, st.ID)
