@@ -7,26 +7,39 @@ import (
 	"time"
 
 	pb "golang.conradwood.net/apis/pinger"
+	"golang.conradwood.net/go-easyops/prometheus"
 )
 
 var (
 	stlock          sync.Mutex
 	status_trackers = make(map[uint64]*status)
+	pingStatusGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "pinger_target_status",
+			Help: "V=2 U=none DESC=reachable(2) or not(1)",
+		},
+		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
+	)
 )
 
 type status struct {
 	ID           uint64
 	state        bool
 	since        time.Time
+	pingerid     string
 	last_updated time.Time // eventually they become stale and are removed
+	pe           *pb.PingEntry
 }
 
+func init() {
+	prometheus.MustRegister(pingStatusGauge)
+}
 func reset_status_trackers() {
 	stlock.Lock()
 	status_trackers = make(map[uint64]*status)
 	stlock.Unlock()
 }
-func get_status_tracker(ID uint64) *status {
+func get_status_tracker(ID uint64, pingerid string) *status {
 	var err error
 	pe := GetPingEntryRouteByID(ID)
 	if pe == nil {
@@ -40,9 +53,15 @@ func get_status_tracker(ID uint64) *status {
 	defer stlock.Unlock()
 	res, found := status_trackers[ID]
 	if found {
+		if res.pe.ID != pe.ID {
+			panic("mismatched pingentry id")
+		}
+		if res.pingerid != pingerid {
+			panic("mismatched pingerid")
+		}
 		return res
 	}
-	res = &status{ID: ID, since: time.Now()}
+	res = &status{ID: ID, since: time.Now(), pingerid: pingerid, pe: pe}
 	status_trackers[ID] = res
 	return res
 }
@@ -55,7 +74,31 @@ func (s *status) Set(b bool) {
 		}
 		s.since = time.Now()
 	}
+	l := s.labels()
+	val := 0
+	if b {
+		val = 2
+	} else {
+		val = 1
+	}
+	pingStatusGauge.With(l).Set(float64(val))
+
 	s.state = b
+
+}
+func (s *status) labels() prometheus.Labels {
+	pe := s.pe
+	l := prometheus.Labels{
+		"entryid":  fmt.Sprintf("%d", pe.ID),
+		"pingerid": s.pingerid,
+		"ip":       pe.IP,
+		"name":     pe.MetricHostName,
+		"tag":      pe.Label,
+		"tag2":     pe.Label2,
+		"tag3":     pe.Label3,
+		"tag4":     pe.Label4,
+	}
+	return l
 }
 
 func get_status_as_proto(ctx context.Context) []*pb.PingStatus {
