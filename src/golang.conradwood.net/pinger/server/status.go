@@ -91,10 +91,19 @@ func (s *status) Set(b bool) {
 }
 func (s *status) labels() prometheus.Labels {
 	pe := s.pe
+
+	ip := pe.IP
+	if ip == "" {
+		nip, err := dc.Get(pe.MetricHostName, pe.IPVersion)
+		if err == nil {
+			ip = nip
+		}
+	}
+
 	l := prometheus.Labels{
 		"entryid":  fmt.Sprintf("%d", pe.ID),
 		"pingerid": s.pingerid,
-		"ip":       pe.IP,
+		"ip":       ip,
 		"name":     pe.MetricHostName,
 		"tag":      pe.Label,
 		"tag2":     pe.Label2,
