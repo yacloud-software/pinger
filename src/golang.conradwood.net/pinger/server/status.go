@@ -74,12 +74,15 @@ func (s *status) Set(b bool) {
 		}
 		s.since = time.Now()
 	}
+
 	l := s.labels()
 	val := 0
-	if b {
-		val = 2
-	} else {
-		val = 1
+	if in_network_status(s.pe) {
+		if b {
+			val = 2
+		} else {
+			val = 1
+		}
 	}
 	pingStatusGauge.With(l).Set(float64(val))
 
