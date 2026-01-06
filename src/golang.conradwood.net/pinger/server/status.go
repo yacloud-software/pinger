@@ -16,7 +16,7 @@ var (
 	pingStatusGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "pinger_target_status",
-			Help: "V=2 U=none DESC=reachable(2) or not(1)",
+			Help: "V=2 U=none DESC=reachable(2) or not(1), 3==currently not checked, e.g. alarm on",
 		},
 		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
@@ -81,12 +81,13 @@ func (s *status) Set(b bool) {
 
 	l := s.labels()
 	val := 0
-	if in_network_status(s.pe) {
-		if b {
-			val = 2
-		} else {
-			val = 1
-		}
+	if b {
+		val = 2
+	} else {
+		val = 1
+	}
+	if !in_network_status(s.pe) {
+		val = 3
 	}
 	pingStatusGauge.With(l).Set(float64(val))
 
