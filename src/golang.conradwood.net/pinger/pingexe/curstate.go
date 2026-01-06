@@ -14,28 +14,28 @@ var (
 	pingState       = make(map[string]*PingState)
 	pingStatusGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "pinger_target_status",
+			Name: "pingexe_target_status",
 			Help: "V=2 U=none DESC=reachable(2) or not(1)",
 		},
 		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
 	pingSpeed = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Name: "pinger_target_speed",
+			Name: "pingexe_target_speed",
 			Help: "V=2 U=none DESC=ping latency in seconds",
 		},
 		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
 	pingSpeedCtr = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "pinger_target_speedctr",
+			Name: "pingexe_target_speedctr",
 			Help: "V=2 U=none DESC=ping latency added each successful ping",
 		},
 		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
 	pingSuccessCtr = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "pinger_target_successctr",
+			Name: "pingexe_target_successctr",
 			Help: "V=2 U=none DESC=ping latency added each successful ping",
 		},
 		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
