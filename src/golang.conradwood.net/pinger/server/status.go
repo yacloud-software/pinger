@@ -12,7 +12,7 @@ import (
 
 var (
 	stlock          sync.Mutex
-	status_trackers = make(map[uint64]*status)
+	status_trackers = make(map[string]*status)
 	pingStatusGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "pinger_target_status",
@@ -36,10 +36,11 @@ func init() {
 }
 func reset_status_trackers() {
 	stlock.Lock()
-	status_trackers = make(map[uint64]*status)
+	status_trackers = make(map[string]*status)
 	stlock.Unlock()
 }
 func get_status_tracker(ID uint64, pingerid string) *status {
+	key := fmt.Sprintf("%d_%s", ID, pingerid)
 	var err error
 	pe := GetPingEntryRouteByID(ID)
 	if pe == nil {
@@ -51,7 +52,7 @@ func get_status_tracker(ID uint64, pingerid string) *status {
 	}
 	stlock.Lock()
 	defer stlock.Unlock()
-	res, found := status_trackers[ID]
+	res, found := status_trackers[key]
 	if found {
 		if res.pe.ID != pe.ID {
 			fmt.Printf("In status: %d,%s\n", res.pe.ID, res.pingerid)
@@ -66,7 +67,7 @@ func get_status_tracker(ID uint64, pingerid string) *status {
 		return res
 	}
 	res = &status{ID: ID, since: time.Now(), pingerid: pingerid, pe: pe}
-	status_trackers[ID] = res
+	status_trackers[key] = res
 	return res
 }
 func (s *status) Set(b bool) {
@@ -121,7 +122,7 @@ func (s *status) labels() prometheus.Labels {
 func get_status_as_proto(ctx context.Context) []*pb.PingStatus {
 	var sts []*status
 	stlock.Lock()
-	var remove []uint64
+	var remove []string
 	for k, v := range status_trackers {
 		if time.Since(v.last_updated) > time.Duration(10)*time.Minute {
 			remove = append(remove, k) // mark stale one
