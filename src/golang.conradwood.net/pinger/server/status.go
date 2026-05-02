@@ -15,7 +15,7 @@ var (
 	status_trackers = make(map[string]*status)
 	pingStatusGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "pinger_target_status",
+			Name: "ping_target_status",
 			Help: "V=2 U=none DESC=reachable(2) or not(1), 3==currently not checked, e.g. alarm on",
 		},
 		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
