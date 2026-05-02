@@ -4,8 +4,8 @@ go 1.25.0
 
 require (
 	github.com/golang/protobuf v1.5.4
-	golang.conradwood.net/apis/common v1.1.4547
-	golang.conradwood.net/apis/netroutes v1.1.4547
+	golang.conradwood.net/apis/common v1.1.4549
+	golang.conradwood.net/apis/netroutes v1.1.4549
 	golang.conradwood.net/go-easyops v0.1.40050
 	golang.org/x/net v0.53.0
 	google.golang.org/grpc v1.80.0
