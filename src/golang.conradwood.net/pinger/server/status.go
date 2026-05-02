@@ -20,6 +20,27 @@ var (
 		},
 		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
+	pingLatencyGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "ping_target_speed",
+			Help: "V=2 U=none DESC=most recent ping latency in seconds",
+		},
+		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
+	)
+	pingLatencyCtr = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "ping_target_speed_counter",
+			Help: "V=2 U=none DESC=increasing latency in seconds",
+		},
+		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
+	)
+	pingCtr = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "ping_count",
+			Help: "V=2 U=none DESC=counter of each ping",
+		},
+		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
+	)
 )
 
 type status struct {
@@ -33,6 +54,7 @@ type status struct {
 }
 
 func init() {
+	prometheus.MustRegister(pingLatencyCtr, pingLatencyGauge, pingCtr)
 	prometheus.MustRegister(pingStatusGauge)
 	go status_network_loop()
 }
@@ -114,7 +136,9 @@ func (s *status) Set(b bool) {
 		s.temporarily_excluded = false
 	}
 	pingStatusGauge.With(l).Set(float64(val))
-
+	pingLatencyGauge.With(l).Set(float64(val))
+	pingLatencyCtr.With(l).Add(float64(val))
+	pingCtr.With(l).Inc()
 	s.state = b
 
 }
