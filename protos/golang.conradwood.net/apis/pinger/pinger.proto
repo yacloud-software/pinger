@@ -56,6 +56,7 @@ message SetPingStatusRequest {
   uint64 ID=1;
   bool Success=2;
   string PingerID=3;
+  uint32 LatencyMS=4; // most recent latency, in ms
 }
 message PingStatus {
   PingEntry PingEntry=1;
