@@ -119,7 +119,7 @@ func (e *echoServer) SetPingStatus(ctx context.Context, req *pb.SetPingStatusReq
 		return &common.Void{}, nil // erroring, just causes it try again
 	}
 
-	st.Set(req.Success)
+	st.Set(req.Success, req.LatencyMS)
 	return &common.Void{}, nil
 }
 func (e *echoServer) GetPingStatus(ctx context.Context, req *common.Void) (*pb.PingStatusList, error) {

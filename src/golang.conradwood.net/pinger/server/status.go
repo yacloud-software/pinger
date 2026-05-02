@@ -84,7 +84,7 @@ func status_network_loop() {
 			if in_network_status(st.pe) {
 				continue
 			}
-			st.Set(false)
+			st.Set(false, 0)
 		}
 	}
 }
@@ -119,7 +119,8 @@ func get_status_tracker(ID uint64, pingerid string) *status {
 	status_trackers[key] = res
 	return res
 }
-func (s *status) Set(b bool) {
+func (s *status) Set(b bool, latency uint32) {
+	latency_secs := float64(latency) / 1000.0
 	s.last_updated = time.Now()
 	if s.state != b {
 		if *debug {
@@ -143,10 +144,11 @@ func (s *status) Set(b bool) {
 		s.temporarily_excluded = false
 	}
 	pingStatusGauge.With(l).Set(float64(val))
-	pingLatencyGauge.With(l).Set(float64(val))
-	pingLatencyCtr.With(l).Add(float64(val))
 	pingCtr.With(l).Inc()
-	if !b {
+	if b {
+		pingLatencyGauge.With(l).Set(latency_secs)
+		pingLatencyCtr.With(l).Add(latency_secs)
+	} else {
 		pingFailCtr.With(l).Inc()
 	}
 	s.state = b
