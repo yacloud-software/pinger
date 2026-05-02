@@ -118,6 +118,7 @@ func (e *echoServer) SetPingStatus(ctx context.Context, req *pb.SetPingStatusReq
 		//		return nil, errors.InvalidArgs(ctx, "invalid id", "invalid id %d", req.ID)
 		return &common.Void{}, nil // erroring, just causes it try again
 	}
+
 	st.Set(req.Success)
 	return &common.Void{}, nil
 }

@@ -36,8 +36,15 @@ var (
 	)
 	pingCtr = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "ping_count",
-			Help: "V=2 U=none DESC=counter of each ping",
+			Name: "ping_count_total",
+			Help: "V=2 U=none DESC=total counter of each ping",
+		},
+		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
+	)
+	pingFailCtr = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "ping_count_failed",
+			Help: "V=2 U=none DESC=total counter of each ping",
 		},
 		[]string{"entryid", "pingerid", "ip", "name", "tag", "tag2", "tag3", "tag4"},
 	)
@@ -55,7 +62,7 @@ type status struct {
 
 func init() {
 	prometheus.MustRegister(pingLatencyCtr, pingLatencyGauge, pingCtr)
-	prometheus.MustRegister(pingStatusGauge)
+	prometheus.MustRegister(pingStatusGauge, pingFailCtr)
 	go status_network_loop()
 }
 func reset_status_trackers() {
@@ -139,6 +146,9 @@ func (s *status) Set(b bool) {
 	pingLatencyGauge.With(l).Set(float64(val))
 	pingLatencyCtr.With(l).Add(float64(val))
 	pingCtr.With(l).Inc()
+	if !b {
+		pingFailCtr.With(l).Inc()
+	}
 	s.state = b
 
 }
